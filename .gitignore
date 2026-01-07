@@ -29,8 +29,8 @@ backend/models/whisper.cpp/
 *.safetensors
 
 # Data
-backend/data/
-backend/uploads/
+# backend/data/
+# backend/uploads/
 *.mp4
 *.avi
 *.mov
