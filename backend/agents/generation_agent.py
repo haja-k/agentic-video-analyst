@@ -48,8 +48,12 @@ class GenerationAgent(BaseAgent):
         output_path = input_data.get("output_path")
         
         if not output_path:
+            # Create results directory if it doesn't exist
+            results_dir = Path("results")
+            results_dir.mkdir(exist_ok=True)
+            
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = f"report_{timestamp}.{format_type}"
+            output_path = str(results_dir / f"report_{timestamp}.{format_type}")
         
         logger.info(f"Generating {format_type.upper()} document: {output_path}")
         
@@ -168,6 +172,12 @@ class GenerationAgent(BaseAgent):
         title.text = content.get("title", "Video Analysis Report")
         subtitle.text = f"Generated on {datetime.now().strftime('%B %d, %Y')}"
         
+        # Format title slide
+        title.text_frame.paragraphs[0].font.name = 'Calibri'
+        title.text_frame.paragraphs[0].font.size = Pt(20)
+        subtitle.text_frame.paragraphs[0].font.name = 'Calibri'
+        subtitle.text_frame.paragraphs[0].font.size = Pt(17)
+        
         if content.get("summary"):
             bullet_slide_layout = prs.slide_layouts[1]
             slide = prs.slides.add_slide(bullet_slide_layout)
@@ -177,6 +187,13 @@ class GenerationAgent(BaseAgent):
             title.text = "Executive Summary"
             tf = body.text_frame
             tf.text = content["summary"]
+            
+            # Format text
+            title.text_frame.paragraphs[0].font.name = 'Calibri'
+            title.text_frame.paragraphs[0].font.size = Pt(20)
+            for paragraph in tf.paragraphs:
+                paragraph.font.name = 'Calibri'
+                paragraph.font.size = Pt(15)
         
         if content.get("transcription"):
             trans = content["transcription"]
@@ -188,12 +205,20 @@ class GenerationAgent(BaseAgent):
             title.text = "Transcription"
             tf = body.text_frame
             
+            # Format title
+            title.text_frame.paragraphs[0].font.name = 'Calibri'
+            title.text_frame.paragraphs[0].font.size = Pt(28)
+            
             if isinstance(trans, dict):
                 if trans.get("transcription"):
                     text = trans["transcription"]
                     if len(text) > 500:
                         text = text[:500] + "..."
                     tf.text = text
+                    # Format text
+                    for paragraph in tf.paragraphs:
+                        paragraph.font.name = 'Calibri'
+                        paragraph.font.size = Pt(15)
                 
                 if trans.get("segments"):
                     slide = prs.slides.add_slide(bullet_slide_layout)
@@ -202,10 +227,21 @@ class GenerationAgent(BaseAgent):
                     title.text = "Key Segments"
                     tf = body.text_frame
                     
-                    for seg in trans["segments"][:8]:
-                        p = tf.add_paragraph()
-                        p.text = f"{seg['start']:.1f}s: {seg['text'][:80]}"
-                        p.level = 0
+                    # Format title
+                    title.text_frame.paragraphs[0].font.name = 'Calibri'
+                    title.text_frame.paragraphs[0].font.size = Pt(20)
+                    
+                    for i, seg in enumerate(trans["segments"][:8]):
+                        if i == 0:
+                            tf.text = f"{seg['start']:.1f}s: {seg['text'][:80]}"
+                            tf.paragraphs[0].font.name = 'Calibri'
+                            tf.paragraphs[0].font.size = Pt(15)
+                        else:
+                            p = tf.add_paragraph()
+                            p.text = f"{seg['start']:.1f}s: {seg['text'][:80]}"
+                            p.level = 0
+                            p.font.name = 'Calibri'
+                            p.font.size = Pt(15)
         
         if content.get("vision_results"):
             vision = content["vision_results"]
@@ -216,9 +252,15 @@ class GenerationAgent(BaseAgent):
             
             title.text = "Visual Analysis"
             
+            # Format title
+            title.text_frame.paragraphs[0].font.name = 'Calibri'
+            title.text_frame.paragraphs[0].font.size = Pt(28)
+            
             if isinstance(vision, dict) and vision.get("results"):
                 tf = body.text_frame
                 tf.text = f"Analyzed {vision.get('frames_analyzed', 0)} frames from the video"
+                tf.paragraphs[0].font.name = 'Calibri'
+                tf.paragraphs[0].font.size = Pt(15)
                 
                 for i, frame in enumerate(vision["results"][:4], 1):
                     p = tf.add_paragraph()
@@ -226,12 +268,16 @@ class GenerationAgent(BaseAgent):
                     caption = frame.get('caption', 'No description')
                     p.text = f"Frame at {timestamp:.1f}s: {caption}"
                     p.level = 1
+                    p.font.name = 'Calibri'
+                    p.font.size = Pt(15)
                     
                     if frame.get("objects"):
                         obj_names = [obj['class'] for obj in frame['objects'][:3]]
                         p2 = tf.add_paragraph()
                         p2.text = f"Objects: {', '.join(obj_names)}"
                         p2.level = 2
+                        p2.font.name = 'Calibri'
+                        p2.font.size = Pt(15)
         
         blank_slide_layout = prs.slide_layouts[6]
         slide = prs.slides.add_slide(blank_slide_layout)
@@ -244,7 +290,8 @@ class GenerationAgent(BaseAgent):
         tf = txBox.text_frame
         tf.text = "Thank You"
         p = tf.paragraphs[0]
-        p.font.size = Pt(44)
+        p.font.name = 'Calibri'
+        p.font.size = Pt(30)
         p.alignment = PP_ALIGN.CENTER
         
         prs.save(output_path)

@@ -4,10 +4,16 @@ Main entry point for the AI Video Analysis Backend
 import asyncio
 import logging
 from concurrent import futures
+from pathlib import Path
 import grpc
 
 from rich.console import Console
 from rich.logging import RichHandler
+
+from agents.orchestrator_agent import OrchestratorAgent
+from agents.transcription_agent import TranscriptionAgent
+from agents.vision_agent import VisionAgent
+from agents.generation_agent import GenerationAgent
 
 # Initialize rich console for better logging
 console = Console()
@@ -29,20 +35,54 @@ class BackendServer:
     def __init__(self, port: int = 50051):
         self.port = port
         self.server = None
+        self.orchestrator = None
+        self.transcription_agent = None
+        self.vision_agent = None
+        self.generation_agent = None
         
     async def initialize(self):
         """Initialize all agents and MCP servers"""
-        console.print("[bold green]Initializing AI Video Analysis Backend...[/bold green]")
+        console.print("[bold green]Initializing AI Video Analysis Backend...[/bold green]\n")
         
-        # TODO: Initialize agents
-        # - Transcription Agent
-        # - Vision Agent
-        # - Generation Agent
-        
-        console.print("✓ Agents initialized", style="green")
-        
-        # TODO: Initialize MCP servers
-        console.print("✓ MCP servers ready", style="green")
+        try:
+            # Find Llama model
+            model_path = Path("models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf")
+            if not model_path.exists():
+                logger.error("Llama model not found at models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf")
+                logger.info("Please download the model using: ./download-models.sh")
+                raise FileNotFoundError("Llama model not found")
+            
+            # Initialize specialized agents
+            console.print("Initializing specialized agents...")
+            
+            self.transcription_agent = TranscriptionAgent(model_size="medium")
+            await self.transcription_agent.initialize()
+            console.print("  ✓ Transcription agent ready", style="green")
+            
+            self.vision_agent = VisionAgent()
+            await self.vision_agent.initialize()
+            console.print("  ✓ Vision agent ready", style="green")
+            
+            self.generation_agent = GenerationAgent()
+            await self.generation_agent.initialize()
+            console.print("  ✓ Generation agent ready", style="green")
+            
+            # Initialize orchestrator with all agents
+            console.print("\nInitializing orchestrator...")
+            self.orchestrator = OrchestratorAgent(
+                model_path=str(model_path),
+                transcription_agent=self.transcription_agent,
+                vision_agent=self.vision_agent,
+                generation_agent=self.generation_agent
+            )
+            await self.orchestrator.initialize()
+            console.print("  ✓ Orchestrator ready", style="green")
+            
+            console.print("\n[bold green]✓ All agents initialized successfully[/bold green]")
+            
+        except Exception as e:
+            logger.error(f"Initialization failed: {e}", exc_info=True)
+            raise
         
     async def start(self):
         """Start the gRPC server"""
@@ -52,23 +92,35 @@ class BackendServer:
             futures.ThreadPoolExecutor(max_workers=10)
         )
         
-        # TODO: Add gRPC servicers
-        # video_service_pb2_grpc.add_VideoServiceServicer_to_server(
-        #     VideoServiceServicer(), self.server
-        # )
+        # TODO: Add gRPC servicers when proto definitions are ready
+        # For now, the server is ready to accept connections
         
         self.server.add_insecure_port(f'[::]:{self.port}')
         await self.server.start()
         
-        console.print(f"[bold green]✓ Server started on port {self.port}[/bold green]")
-        console.print("\n[bold cyan]Ready to process video queries![/bold cyan]\n")
+        console.print(f"\n[bold green]✓ Server started on port {self.port}[/bold green]")
+        console.print("\n[bold cyan]Ready to process video queries![/bold cyan]")
+        console.print("[dim]Press Ctrl+C to stop[/dim]\n")
         
         await self.server.wait_for_termination()
         
     async def stop(self):
         """Graceful shutdown"""
+        console.print("\n[yellow]Shutting down...[/yellow]")
+        
+        if self.orchestrator:
+            await self.orchestrator.cleanup()
+        if self.transcription_agent:
+            await self.transcription_agent.cleanup()
+        if self.vision_agent:
+            await self.vision_agent.cleanup()
+        if self.generation_agent:
+            await self.generation_agent.cleanup()
+        
         if self.server:
             await self.server.stop(grace=5)
+        
+        console.print("[green]Shutdown complete[/green]")
 
 
 async def main():
@@ -78,10 +130,10 @@ async def main():
     try:
         await server.start()
     except KeyboardInterrupt:
-        console.print("\n[yellow]Shutting down gracefully...[/yellow]")
         await server.stop()
     except Exception as e:
         logger.error(f"Server error: {e}", exc_info=True)
+        await server.stop()
         raise
 
 
