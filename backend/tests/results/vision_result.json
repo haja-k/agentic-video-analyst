@@ -1,0 +1,210 @@
+{
+  "frames_analyzed": 8,
+  "results": [
+    {
+      "frame_number": 0,
+      "timestamp": 0.0,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.9057331681251526,
+          "bbox": [
+            61.524993896484375,
+            60.10107421875,
+            359.1058349609375,
+            580.4078369140625
+          ]
+        },
+        {
+          "class": "chair",
+          "confidence": 0.6189069151878357,
+          "bbox": [
+            14.87908935546875,
+            203.28526306152344,
+            309.1976318359375,
+            625.3602294921875
+          ]
+        }
+      ],
+      "caption": "a woman sitting in a chair with a man standing next to her"
+    },
+    {
+      "frame_number": 181,
+      "timestamp": 7.24,
+      "objects": [],
+      "caption": "a bird flying over a sandy dune"
+    },
+    {
+      "frame_number": 363,
+      "timestamp": 14.52,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.9072749614715576,
+          "bbox": [
+            0.0,
+            28.896484375,
+            359.73419189453125,
+            638.3988037109375
+          ]
+        },
+        {
+          "class": "tie",
+          "confidence": 0.5647789239883423,
+          "bbox": [
+            91.27261352539062,
+            510.69378662109375,
+            232.5770263671875,
+            639.7241821289062
+          ]
+        },
+        {
+          "class": "tie",
+          "confidence": 0.2505945563316345,
+          "bbox": [
+            95.55281829833984,
+            413.51708984375,
+            158.82992553710938,
+            436.28204345703125
+          ]
+        }
+      ],
+      "caption": "a woman in a suit and tie is talking"
+    },
+    {
+      "frame_number": 545,
+      "timestamp": 21.8,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.90523761510849,
+          "bbox": [
+            0.0,
+            85.400146484375,
+            316.9890441894531,
+            633.8377075195312
+          ]
+        },
+        {
+          "class": "chair",
+          "confidence": 0.821353018283844,
+          "bbox": [
+            102.32827758789062,
+            269.5191650390625,
+            322.88494873046875,
+            637.97216796875
+          ]
+        }
+      ],
+      "caption": "a man and woman sitting in chairs talking"
+    },
+    {
+      "frame_number": 726,
+      "timestamp": 29.04,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.8986210823059082,
+          "bbox": [
+            0.0,
+            28.29962158203125,
+            359.5135498046875,
+            636.8997802734375
+          ]
+        },
+        {
+          "class": "tie",
+          "confidence": 0.632314145565033,
+          "bbox": [
+            118.42294311523438,
+            516.6270751953125,
+            262.2288513183594,
+            639.7779541015625
+          ]
+        },
+        {
+          "class": "tie",
+          "confidence": 0.32982999086380005,
+          "bbox": [
+            120.57168579101562,
+            410.49041748046875,
+            189.48931884765625,
+            444.95147705078125
+          ]
+        }
+      ],
+      "caption": "a woman in a suit and tie sitting down"
+    },
+    {
+      "frame_number": 908,
+      "timestamp": 36.32,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.90218186378479,
+          "bbox": [
+            51.05145263671875,
+            64.233154296875,
+            360.0,
+            638.87744140625
+          ]
+        }
+      ],
+      "caption": "a woman in a suit and tie is talking"
+    },
+    {
+      "frame_number": 1090,
+      "timestamp": 43.6,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.9309840202331543,
+          "bbox": [
+            38.9796142578125,
+            10.696533203125,
+            353.27972412109375,
+            638.2664794921875
+          ]
+        },
+        {
+          "class": "tie",
+          "confidence": 0.3093636929988861,
+          "bbox": [
+            183.13485717773438,
+            182.1392822265625,
+            223.2684326171875,
+            268.3168029785156
+          ]
+        },
+        {
+          "class": "chair",
+          "confidence": 0.26034101843833923,
+          "bbox": [
+            0.8817825317382812,
+            366.75726318359375,
+            63.305564880371094,
+            505.71173095703125
+          ]
+        }
+      ],
+      "caption": "a woman in a coat and tie standing in a barn"
+    },
+    {
+      "frame_number": 1272,
+      "timestamp": 50.88,
+      "objects": [
+        {
+          "class": "person",
+          "confidence": 0.9100823998451233,
+          "bbox": [
+            0.0,
+            21.804443359375,
+            359.5889892578125,
+            637.4989013671875
+          ]
+        }
+      ],
+      "caption": "a woman in a suit sitting down with a green sign"
+    }
+  ]
+}
