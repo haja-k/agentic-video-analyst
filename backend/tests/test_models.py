@@ -70,9 +70,9 @@ def test_llama():
         console.print("  - Whisper Base: ~150MB (faster but lower quality)")
         
         if is_vision:
-            console.print(f"[green]✅ Llama 3.2 Vision model working! (multimodal capable)[/green]")
+            console.print(f"[green]Llama 3.2 Vision model working! (multimodal capable)[/green]")
         else:
-            console.print(f"[green]✅ Llama model working![/green]")
+            console.print(f"[green]Llama model working![/green]")
         
         console.print(f"Model: {model_name}")
         console.print(f"Sample output: {response['choices'][0]['text'][:50]}...")
@@ -80,7 +80,7 @@ def test_llama():
         return True
         
     except Exception as e:
-        console.print(f"[red]❌ Error: {e}[/red]")
+        console.print(f"[red]Error: {e}[/red]")
         import traceback
         console.print(traceback.format_exc())
         return False
@@ -98,15 +98,15 @@ def test_whisper():
         console.print("[yellow]Note: Model will download on first actual use[/yellow]")
         console.print("  - Whisper Medium: ~1.5GB (recommended)")
         console.print("  - Whisper Base: ~150MB (faster but lower quality)")
-        console.print("[green]✅ Whisper ready![/green]")
+        console.print("[green]Whisper ready![/green]")
         return True
         
     except ImportError as e:
-        console.print(f"[red]❌ Whisper not installed: {e}[/red]")
+        console.print(f"[red]Whisper not installed: {e}[/red]")
         console.print("Install: pip install openai-whisper")
         return False
     except Exception as e:
-        console.print(f"[yellow]⚠️  Warning: {e}[/yellow]")
+        console.print(f"[yellow]Warning: {e}[/yellow]")
         return True
 
 
@@ -125,17 +125,17 @@ def test_vision():
             "models/llama-3.2-11b-vision-instruct.Q4_K_M.gguf"
         ]
         if any(os.path.exists(p) for p in vision_model_paths):
-            console.print("[green]✅ Llama 3.2 Vision detected! (Multimodal - no separate vision model needed)[/green]")
+            console.print("[green]Llama 3.2 Vision detected! (Multimodal - no separate vision model needed)[/green]")
         else:
             console.print("[yellow]Note: BLIP-2 will auto-download on first use (~2.7GB)[/yellow]")
-            console.print("[green]✅ Vision libraries ready![/green]")
+            console.print("[green]Vision libraries ready![/green]")
         
         console.print("[yellow]Note: BLIP and other models will download on first use (~500MB)[/yellow]")
-        console.print("[green]✅ Vision libraries ready![/green]")
+        console.print("[green]Vision libraries ready![/green]")
         return True
         
     except ImportError as e:
-        console.print(f"[red]❌ Vision libraries not installed: {e}[/red]")
+        console.print(f"[red]Vision libraries not installed: {e}[/red]")
         return False
 
 
@@ -147,17 +147,17 @@ def test_document_generation():
         import reportlab
         import pptx
         
-        console.print("[green]✅ ReportLab and python-pptx installed![/green]")
+        console.print("[green]ReportLab and python-pptx installed![/green]")
         return True
         
     except ImportError as e:
-        console.print(f"[red]❌ Document libraries not installed: {e}[/red]")
+        console.print(f"[red]Document libraries not installed: {e}[/red]")
         return False
 
 
 def main():
     """Run all tests"""
-    console.print("[bold green]🧪 Testing AI Model Setup[/bold green]\n")
+    console.print("[bold green]Testing AI Model Setup[/bold green]\n")
     
     results = {
         "Llama (LLM)": test_llama(),
@@ -167,21 +167,21 @@ def main():
     }
     
     # Summary table
-    table = Table(title="\n📊 Model Test Results")
+    table = Table(title="\nModel Test Results")
     table.add_column("Component", style="cyan")
     table.add_column("Status", style="bold")
     
     for name, status in results.items():
-        status_text = "[green]✅ Ready[/green]" if status else "[red]❌ Failed[/red]"
+        status_text = "[green]Ready[/green]" if status else "[red]Failed[/red]"
         table.add_row(name, status_text)
     
     console.print(table)
     
     if all(results.values()):
-        console.print("\n[bold green]🎉 All systems ready for demo![/bold green]\n")
+        console.print("\n[bold green]All systems ready for demo![/bold green]\n")
         return 0
     else:
-        console.print("\n[bold yellow]⚠️  Some components need attention[/bold yellow]\n")
+        console.print("\n[bold yellow]Some components need attention[/bold yellow]\n")
         return 1
 
 

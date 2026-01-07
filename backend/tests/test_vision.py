@@ -22,20 +22,20 @@ async def test_vision(video_path: str):
     """Test the vision agent with a video file"""
     
     if not Path(video_path).exists():
-        print(f"❌ Error: Video file not found: {video_path}")
+        print(f"Error: Video file not found: {video_path}")
         return
     
-    print(f"\n👁️  Testing Vision Agent")
+    print(f"\nTesting Vision Agent")
     print(f"Video: {video_path}")
     print("-" * 60)
     
     agent = VisionAgent()
     
-    print("\n🔄 Initializing vision models (BLIP-2 + YOLOv8)...")
+    print("\nInitializing vision models (BLIP-2 + YOLOv8)...")
     print("   First run will download models (~2.7GB for BLIP, ~6MB for YOLO)")
     await agent.initialize()
     
-    print("\n🎬 Extracting frames and analyzing...")
+    print("\nExtracting frames and analyzing...")
     result = await agent.process({
         "video_path": video_path,
         "task": "analyze",
@@ -43,29 +43,29 @@ async def test_vision(video_path: str):
     })
     
     if "error" in result:
-        print(f"\n❌ Error: {result['error']}")
+        print(f"\nError: {result['error']}")
         return
     
     print("\n" + "=" * 60)
-    print("✅ VISION ANALYSIS COMPLETE")
+    print("VISION ANALYSIS COMPLETE")
     print("=" * 60)
     
-    print(f"\n📊 Frames analyzed: {result['frames_analyzed']}")
+    print(f"\nFrames analyzed: {result['frames_analyzed']}")
     
     for i, frame_result in enumerate(result['results'], 1):
         print(f"\n{'='*60}")
         print(f"Frame {i}/{len(result['results'])}")
         print(f"{'='*60}")
-        print(f"⏱️  Timestamp: {frame_result['timestamp']:.2f}s")
-        print(f"🖼️  Frame number: {frame_result['frame_number']}")
+        print(f"Timestamp: {frame_result['timestamp']:.2f}s")
+        print(f"Frame number: {frame_result['frame_number']}")
         
         if 'caption' in frame_result:
-            print(f"\n📝 Scene Description:")
+            print(f"\nScene Description:")
             print(f"   {frame_result['caption']}")
         
         if 'objects' in frame_result:
             objects = frame_result['objects']
-            print(f"\n🎯 Objects Detected ({len(objects)}):")
+            print(f"\nObjects Detected ({len(objects)}):")
             
             if objects:
                 object_summary = {}
@@ -88,7 +88,7 @@ async def test_vision(video_path: str):
     output_file = "results/vision_result.json"
     with open(output_file, 'w') as f:
         json.dump(result, f, indent=2)
-    print(f"💾 Full result saved to: {output_file}")
+    print(f"Full result saved to: {output_file}")
     
     await agent.cleanup()
 
