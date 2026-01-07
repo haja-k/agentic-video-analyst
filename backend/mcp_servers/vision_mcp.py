@@ -14,14 +14,12 @@ logger = logging.getLogger(__name__)
 class VisionMCPServer(BaseMCPServer):
     """MCP Server for vision analysis operations"""
     
-    def __init__(self):
+    def __init__(self, agent=None):
         super().__init__("vision-server", "1.0.0")
-        self.agent = None
+        self.agent = agent
         
     async def initialize(self):
-        """Initialize vision agent and register tools"""
-        self.agent = VisionAgent()
-        await self.agent.initialize()
+        """Register tools (agent should be set externally)"""
         
         # Register tools
         self.register_tool({
@@ -89,8 +87,8 @@ class VisionMCPServer(BaseMCPServer):
     async def handle_tool_call(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Handle tool invocations"""
         task_map = {
-            "detect_objects": "detect_objects",
-            "caption_video": "caption",
+            "detect_objects": "analyze",  # Get both objects and captions
+            "caption_video": "analyze",   # Get both objects and captions
             "detect_graphs": "detect_graphs",
             "extract_text": "ocr"
         }

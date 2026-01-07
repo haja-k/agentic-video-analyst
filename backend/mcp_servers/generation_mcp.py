@@ -14,14 +14,12 @@ logger = logging.getLogger(__name__)
 class GenerationMCPServer(BaseMCPServer):
     """MCP Server for document generation operations"""
     
-    def __init__(self):
+    def __init__(self, agent=None):
         super().__init__("generation-server", "1.0.0")
-        self.agent = None
+        self.agent = agent
         
     async def initialize(self):
-        """Initialize generation agent and register tools"""
-        self.agent = GenerationAgent()
-        await self.agent.initialize()
+        """Register tools (agent should be set externally)"""
         
         # Register tools
         self.register_tool({

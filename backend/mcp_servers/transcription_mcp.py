@@ -14,14 +14,12 @@ logger = logging.getLogger(__name__)
 class TranscriptionMCPServer(BaseMCPServer):
     """MCP Server for transcription operations"""
     
-    def __init__(self):
+    def __init__(self, agent=None):
         super().__init__("transcription-server", "1.0.0")
-        self.agent = None
+        self.agent = agent
         
     async def initialize(self):
-        """Initialize transcription agent and register tools"""
-        self.agent = TranscriptionAgent()
-        await self.agent.initialize()
+        """Register tools and prompts (agent should be set externally)"""
         
         # Register tools
         self.register_tool({

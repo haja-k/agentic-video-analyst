@@ -16,18 +16,18 @@ class OrchestratorAgent(BaseAgent):
     """
     Main orchestrator that uses Llama 3.1 8B to:
     - Understand user queries
-    - Route to appropriate agents
-    - Coordinate multi-agent workflows
+    - Route to appropriate MCP servers
+    - Coordinate multi-agent workflows via MCP protocol
     - Generate final responses
     """
     
-    def __init__(self, model_path: str, transcription_agent=None, 
-                 vision_agent=None, generation_agent=None):
+    def __init__(self, model_path: str, transcription_mcp=None, 
+                 vision_mcp=None, generation_mcp=None):
         super().__init__("Orchestrator", model_path)
         self.llm = None
-        self.transcription_agent = transcription_agent
-        self.vision_agent = vision_agent
-        self.generation_agent = generation_agent
+        self.transcription_mcp = transcription_mcp
+        self.vision_mcp = vision_mcp
+        self.generation_mcp = generation_mcp
         self.conversation_history = []
         
     async def initialize(self):
@@ -177,12 +177,13 @@ User query: {query}"""
                     intent_json = json.loads(response_text[start:end])
                     # Validate required keys
                     if "primary_action" in intent_json:
+                        logger.info(f"LLM intent: {intent_json.get('primary_action')}")
                         return intent_json
                 except json.JSONDecodeError:
                     pass
             
             # Fallback: parse from text
-            logger.info("LLM output not valid JSON, using keyword fallback")
+            logger.info(f"LLM output not valid JSON, using keyword fallback for: '{query}'")
             return self._parse_intent_from_text(query, context)
             
         except Exception as e:
@@ -201,32 +202,43 @@ User query: {query}"""
             "reasoning": "keyword-based fallback"
         }
         
-        # Check for transcription requests
-        if any(word in query_lower for word in ["transcribe", "transcript", "what was said", "speech", "audio"]):
+        # Check for transcription requests FIRST (highest priority)
+        if any(word in query_lower for word in ["transcribe", "transcript", "transcription"]):
             intent["primary_action"] = "transcribe"
+            logger.info(f"Keyword match: transcribe (matched transcription keywords)")
+            
+        # Check for audio/speech related (also transcription)
+        elif any(word in query_lower for word in ["what was said", "what did", "speech", "audio", "spoken"]):
+            intent["primary_action"] = "transcribe"
+            logger.info(f"Keyword match: transcribe (matched audio/speech keywords)")
+            
+        # Check for graph analysis BEFORE generic object detection
+        elif any(word in query_lower for word in ["graph", "chart", "plot", "diagram"]):
+            intent["primary_action"] = "describe_scenes"
+            intent["additional_actions"] = ["detect_objects"]
+            logger.info(f"Keyword match: graphs (describe_scenes + detect_objects)")
             
         # Check for object detection
-        elif any(word in query_lower for word in ["object", "detect", "identify", "what do you see", "items"]):
+        elif any(word in query_lower for word in ["object", "detect", "identify", "items", "see"]):
             intent["primary_action"] = "detect_objects"
+            logger.info(f"Keyword match: detect_objects")
             
         # Check for scene description
-        elif any(word in query_lower for word in ["describe", "scene", "what's happening", "visual", "show"]):
+        elif any(word in query_lower for word in ["describe", "what's happening", "what is happening"]):
             intent["primary_action"] = "describe_scenes"
-            
-        # Check for graph analysis
-        elif any(word in query_lower for word in ["graph", "chart", "plot", "diagram"]):
-            intent["primary_action"] = "detect_objects"
-            intent["additional_actions"] = ["describe_scenes"]
+            logger.info(f"Keyword match: describe_scenes")
             
         # Check for report generation
         elif "pdf" in query_lower or "report" in query_lower:
             intent["primary_action"] = "generate_pdf"
+            logger.info(f"Keyword match: generate_pdf")
             if not context.get("transcription") or not context.get("vision_results"):
                 intent["needs_clarification"] = True
                 intent["clarification_question"] = "I'll need to analyze the video first. Should I transcribe and analyze it before generating the report?"
                 
         elif "powerpoint" in query_lower or "pptx" in query_lower or "presentation" in query_lower:
             intent["primary_action"] = "generate_pptx"
+            logger.info(f"Keyword match: generate_pptx")
             if not context.get("transcription") or not context.get("vision_results"):
                 intent["needs_clarification"] = True
                 intent["clarification_question"] = "I'll need to analyze the video first. Should I transcribe and analyze it before creating the presentation?"
@@ -234,6 +246,10 @@ User query: {query}"""
         # Check for summary - improved matching
         elif any(word in query_lower for word in ["summary", "summarize", "summarise", "overview", "recap"]):
             intent["primary_action"] = "summarize"
+            logger.info(f"Keyword match: summarize")
+        
+        else:
+            logger.info(f"No keyword match, defaulting to 'respond'")
         
         return intent
     
@@ -246,66 +262,75 @@ User query: {query}"""
         
         for action in actions:
             try:
-                if action == "transcribe" and self.transcription_agent:
+                if action == "transcribe" and self.transcription_mcp:
                     if not video_path:
                         results["transcribe"] = {"error": "No video provided"}
                         continue
                     
-                    logger.info("Executing transcription...")
-                    transcription_result = await self.transcription_agent.process({
-                        "video_path": video_path
-                    })
+                    logger.info("Executing transcription via MCP...")
+                    transcription_result = await self.transcription_mcp.handle_tool_call(
+                        "transcribe_video",
+                        {"video_path": video_path}
+                    )
                     results["transcription"] = transcription_result
                     context["transcription"] = transcription_result
                     
-                elif action == "detect_objects" and self.vision_agent:
+                elif action == "detect_objects" and self.vision_mcp:
                     if not video_path:
                         results["detect_objects"] = {"error": "No video provided"}
                         continue
                     
-                    logger.info("Executing object detection...")
-                    vision_result = await self.vision_agent.process({
-                        "video_path": video_path,
-                        "task": "detect_objects",
-                        "num_frames": 5
-                    })
+                    logger.info("Executing object detection via MCP...")
+                    vision_result = await self.vision_mcp.handle_tool_call(
+                        "detect_objects",
+                        {"video_path": video_path}
+                    )
                     results["vision"] = vision_result
                     context["vision_results"] = vision_result
                     
-                elif action == "describe_scenes" and self.vision_agent:
+                elif action == "describe_scenes" and self.vision_mcp:
                     if not video_path:
                         results["describe_scenes"] = {"error": "No video provided"}
                         continue
                     
-                    logger.info("Executing scene description...")
-                    vision_result = await self.vision_agent.process({
-                        "video_path": video_path,
-                        "task": "describe_scene",
-                        "num_frames": 5
-                    })
+                    logger.info("Executing scene description via MCP...")
+                    vision_result = await self.vision_mcp.handle_tool_call(
+                        "caption_video",
+                        {"video_path": video_path}
+                    )
                     results["vision"] = vision_result
                     context["vision_results"] = vision_result
                     
-                elif action == "generate_pdf" and self.generation_agent:
-                    logger.info("Generating PDF report...")
-                    pdf_result = await self.generation_agent.process({
-                        "format": "pdf",
-                        "title": "Video Analysis Report",
-                        "transcription": context.get("transcription"),
-                        "vision_results": context.get("vision_results"),
-                        "summary": context.get("summary", "")
-                    })
+                elif action == "generate_pdf" and self.generation_mcp:
+                    logger.info("Generating PDF report via MCP...")
+                    pdf_result = await self.generation_mcp.handle_tool_call(
+                        "generate_pdf",
+                        {
+                            "content": {
+                                "title": "Video Analysis Report",
+                                "transcription": context.get("transcription"),
+                                "vision_results": context.get("vision_results"),
+                                "summary": context.get("summary", "")
+                            },
+                            "output_path": "results/report"
+                        }
+                    )
                     results["pdf"] = pdf_result
                     
-                elif action == "generate_pptx" and self.generation_agent:
-                    logger.info("Generating PowerPoint presentation...")
-                    pptx_result = await self.generation_agent.process({
-                        "format": "pptx",
-                        "title": "Video Analysis Presentation",
-                        "transcription": context.get("transcription"),
-                        "vision_results": context.get("vision_results"),
-                        "summary": context.get("summary", "")
-                    })
+                elif action == "generate_pptx" and self.generation_mcp:
+                    logger.info("Generating PowerPoint presentation via MCP...")
+                    pptx_result = await self.generation_mcp.handle_tool_call(
+                        "generate_pptx",
+                        {
+                            "content": {
+                                "title": "Video Analysis Presentation",
+                                "transcription": context.get("transcription"),
+                                "vision_results": context.get("vision_results"),
+                                "summary": context.get("summary", "")
+                            },
+                            "output_path": "results/report"
+                        }
+                    )
                     results["pptx"] = pptx_result
                     
                 elif action == "summarize":
@@ -404,6 +429,7 @@ Summary (2-3 sentences only):"""
         if "error" in str(results):
             return "I encountered an issue processing your request. Please try again or rephrase your query."
         
+        query_lower = query.lower()
         response_parts = []
         
         if "transcription" in results:
@@ -427,11 +453,14 @@ Summary (2-3 sentences only):"""
                 captions = []
                 
                 for frame in vision["results"]:
-                    if "objects" in frame and frame["objects"]:
+                    # Objects are a list of dicts with 'class' key
+                    if "objects" in frame and isinstance(frame["objects"], list):
                         for obj in frame["objects"]:
-                            all_objects.add(obj.get("class", "unknown"))
+                            if "class" in obj:
+                                all_objects.add(obj["class"])
                     
-                    if "caption" in frame and len(captions) < 2:
+                    # Caption is in frame["caption"]
+                    if "caption" in frame and len(captions) < 3:
                         captions.append(frame["caption"])
                 
                 if all_objects:
@@ -442,18 +471,33 @@ Summary (2-3 sentences only):"""
                     response_parts.append(f"\nScene descriptions:")
                     for i, cap in enumerate(captions, 1):
                         response_parts.append(f"  {i}. {cap}")
+                
+                # Special handling for graph/chart queries
+                if any(word in query_lower for word in ["graph", "chart", "plot", "diagram"]):
+                    # Check if any objects that might be graphs were detected
+                    graph_objects = all_objects.intersection({"chart", "graph", "plot", "diagram", "monitor", "tv", "screen"})
+                    if graph_objects:
+                        response_parts.append(f"\nPossible visual displays detected: {', '.join(graph_objects)}")
+                    else:
+                        response_parts.append(f"\nNo graphs or charts were detected in the analyzed frames.")
             else:
                 response_parts.append("Visual analysis completed.")
             
         if "pdf" in results:
             pdf = results["pdf"]
             if "output_path" in pdf:
-                response_parts.append(f"\nGenerated PDF report: {pdf['output_path']}")
+                path = pdf['output_path']
+                if not path.endswith('.pdf'):
+                    path += '.pdf'
+                response_parts.append(f"\nGenerated PDF report: {path}")
                 
         if "pptx" in results:
             pptx = results["pptx"]
             if "output_path" in pptx:
-                response_parts.append(f"\nCreated PowerPoint: {pptx['output_path']}")
+                path = pptx['output_path']
+                if not path.endswith('.pptx'):
+                    path += '.pptx'
+                response_parts.append(f"\nCreated PowerPoint: {path}")
         
         return "\n".join(response_parts) if response_parts else "Task completed."
     

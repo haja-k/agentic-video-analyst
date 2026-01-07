@@ -15,6 +15,10 @@ from agents.transcription_agent import TranscriptionAgent
 from agents.vision_agent import VisionAgent
 from agents.generation_agent import GenerationAgent
 
+from mcp_servers.transcription_mcp import TranscriptionMCPServer
+from mcp_servers.vision_mcp import VisionMCPServer
+from mcp_servers.generation_mcp import GenerationMCPServer
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -47,11 +51,16 @@ async def test_orchestrator(video_path: str = None):
     vision_agent = VisionAgent()
     generation_agent = GenerationAgent()
     
+    # Wrap agents with MCP servers
+    transcription_mcp = TranscriptionMCPServer(agent=transcription_agent)
+    vision_mcp = VisionMCPServer(agent=vision_agent)
+    generation_mcp = GenerationMCPServer(agent=generation_agent)
+    
     orchestrator = OrchestratorAgent(
         model_path=model_path,
-        transcription_agent=transcription_agent,
-        vision_agent=vision_agent,
-        generation_agent=generation_agent
+        transcription_mcp=transcription_mcp,
+        vision_mcp=vision_mcp,
+        generation_mcp=generation_mcp
     )
     
     try:
@@ -60,7 +69,12 @@ async def test_orchestrator(video_path: str = None):
         await vision_agent.initialize()
         await generation_agent.initialize()
         
-        console.print("[green]All agents initialized[/green]\n")
+        # Initialize MCP servers
+        await transcription_mcp.initialize()
+        await vision_mcp.initialize()
+        await generation_mcp.initialize()
+        
+        console.print("[green]All agents and MCP servers initialized[/green]\n")
         
     except Exception as e:
         console.print(f"[red]Initialization failed: {e}[/red]")

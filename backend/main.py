@@ -15,6 +15,10 @@ from agents.transcription_agent import TranscriptionAgent
 from agents.vision_agent import VisionAgent
 from agents.generation_agent import GenerationAgent
 
+from mcp_servers.transcription_mcp import TranscriptionMCPServer
+from mcp_servers.vision_mcp import VisionMCPServer
+from mcp_servers.generation_mcp import GenerationMCPServer
+
 # Initialize rich console for better logging
 console = Console()
 
@@ -36,9 +40,9 @@ class BackendServer:
         self.port = port
         self.server = None
         self.orchestrator = None
-        self.transcription_agent = None
-        self.vision_agent = None
-        self.generation_agent = None
+        self.transcription_mcp = None
+        self.vision_mcp = None
+        self.generation_mcp = None
         
     async def initialize(self):
         """Initialize all agents and MCP servers"""
@@ -55,30 +59,45 @@ class BackendServer:
             # Initialize specialized agents
             console.print("Initializing specialized agents...")
             
-            self.transcription_agent = TranscriptionAgent(model_size="medium")
-            await self.transcription_agent.initialize()
+            transcription_agent = TranscriptionAgent(model_size="medium")
+            await transcription_agent.initialize()
             console.print("  ✓ Transcription agent ready", style="green")
             
-            self.vision_agent = VisionAgent()
-            await self.vision_agent.initialize()
+            vision_agent = VisionAgent()
+            await vision_agent.initialize()
             console.print("  ✓ Vision agent ready", style="green")
             
-            self.generation_agent = GenerationAgent()
-            await self.generation_agent.initialize()
+            generation_agent = GenerationAgent()
+            await generation_agent.initialize()
             console.print("  ✓ Generation agent ready", style="green")
             
-            # Initialize orchestrator with all agents
+            # Initialize MCP servers wrapping the agents
+            console.print("\nInitializing MCP servers...")
+            
+            self.transcription_mcp = TranscriptionMCPServer(agent=transcription_agent)
+            await self.transcription_mcp.initialize()
+            console.print("  ✓ Transcription MCP server ready", style="green")
+            
+            self.vision_mcp = VisionMCPServer(agent=vision_agent)
+            await self.vision_mcp.initialize()
+            console.print("  ✓ Vision MCP server ready", style="green")
+            
+            self.generation_mcp = GenerationMCPServer(agent=generation_agent)
+            await self.generation_mcp.initialize()
+            console.print("  ✓ Generation MCP server ready", style="green")
+            
+            # Initialize orchestrator with MCP servers
             console.print("\nInitializing orchestrator...")
             self.orchestrator = OrchestratorAgent(
                 model_path=str(model_path),
-                transcription_agent=self.transcription_agent,
-                vision_agent=self.vision_agent,
-                generation_agent=self.generation_agent
+                transcription_mcp=self.transcription_mcp,
+                vision_mcp=self.vision_mcp,
+                generation_mcp=self.generation_mcp
             )
             await self.orchestrator.initialize()
             console.print("  ✓ Orchestrator ready", style="green")
             
-            console.print("\n[bold green]✓ All agents initialized successfully[/bold green]")
+            console.print("\n[bold green]✓ All agents and MCP servers initialized successfully[/bold green]")
             
         except Exception as e:
             logger.error(f"Initialization failed: {e}", exc_info=True)
@@ -110,12 +129,14 @@ class BackendServer:
         
         if self.orchestrator:
             await self.orchestrator.cleanup()
-        if self.transcription_agent:
-            await self.transcription_agent.cleanup()
-        if self.vision_agent:
-            await self.vision_agent.cleanup()
-        if self.generation_agent:
-            await self.generation_agent.cleanup()
+        
+        # MCP servers will be cleaned up through their wrapped agents
+        if self.transcription_mcp and self.transcription_mcp.agent:
+            await self.transcription_mcp.agent.cleanup()
+        if self.vision_mcp and self.vision_mcp.agent:
+            await self.vision_mcp.agent.cleanup()
+        if self.generation_mcp and self.generation_mcp.agent:
+            await self.generation_mcp.agent.cleanup()
         
         if self.server:
             await self.server.stop(grace=5)

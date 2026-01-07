@@ -18,7 +18,7 @@ Runs all test scripts in sequence with the provided video.
 ## Individual Test Scripts
 
 ### test_orchestrator.py
-Test the OrchestratorAgent with Llama 3.1 8B for query routing and multi-agent coordination.
+Test the OrchestratorAgent with Llama 3.1 8B for query routing and multi-agent coordination through MCP servers.
 
 ```bash
 cd backend/tests
@@ -33,9 +33,18 @@ python test_orchestrator.py ../uploads/your_video.mp4
 
 **What it tests:**
 - Natural language query understanding
-- Intent analysis and action routing
-- Multi-agent coordination
+- Intent analysis and action routing through MCP servers
+- MCP protocol communication between orchestrator and specialized agents
+- Multi-agent coordination via standardized tool calls
 - Context management across queries
+
+**MCP Routing Implementation:**
+The orchestrator no longer calls agents directly. Instead, it routes queries through MCP (Model Context Protocol) servers that wrap each specialized agent:
+- `TranscriptionMCPServer` → `TranscriptionAgent` (Whisper)
+- `VisionMCPServer` → `VisionAgent` (BLIP-2 + YOLOv8)
+- `GenerationMCPServer` → `GenerationAgent` (ReportLab + python-pptx)
+
+This ensures standardized communication and allows for future extensibility.
 
 **Example queries:**
 - "Transcribe the video"
@@ -117,7 +126,7 @@ Then run the desired test script.
 
 ## Architecture
 
-The orchestrator coordinates all agents:
+The orchestrator coordinates all agents through MCP servers:
 
 ```
 User Query → Orchestrator (Llama 3.1 8B)
@@ -127,7 +136,15 @@ User Query → Orchestrator (Llama 3.1 8B)
     ┌────────────┼────────────┐
     ↓            ↓            ↓
 Transcription  Vision    Generation
+  MCPServer    MCPServer   MCPServer
+    ↓            ↓            ↓
+Transcription  Vision    Generation
   Agent        Agent       Agent
     ↓            ↓            ↓
   Whisper    BLIP-2+YOLOv8  ReportLab+pptx
 ```
+
+**MCP Protocol Layer:**
+- Orchestrator communicates with MCP servers using standardized tool calls
+- Each MCP server wraps a specialized agent and handles protocol translation
+- Enables modular architecture and future agent additions

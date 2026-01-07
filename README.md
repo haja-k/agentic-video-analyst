@@ -2,8 +2,8 @@
 
 > **Local AI-powered video analysis with multi-agent orchestration**
 
-**Status:** Orchestration Complete | Ready for Frontend Integration  
-**Platform:** MacBook Air M2, 16GB RAM | **Updated:** Jan 7, 2026  
+**Status:** MCP Routing Complete | Ready for Frontend Integration  
+**Platform:** MacBook Air M2, 16GB RAM | **Updated:** Jan 8, 2026  
 **Purpose:** Intel Senior GenAI Software Solutions Engineer Application
 
 ---
@@ -22,8 +22,8 @@
 
 **Current Status:**
 - ✅ All agents implemented and tested
-- ✅ Orchestrator routing queries intelligently
-- ✅ Multi-agent coordination working
+- ✅ Orchestrator routing queries via MCP protocol
+- ✅ Multi-agent coordination through MCP servers
 - ⏳ Frontend UI in development
 
 ---
@@ -59,7 +59,8 @@
 ### Components
 - **Frontend:** React + Tauri (desktop app) - In Development
 - **Backend:** Python with multi-agent orchestration
-- **Orchestrator:** Llama 3.1 8B for query understanding and routing
+- **Orchestrator:** Llama 3.1 8B for query understanding and routing via MCP
+- **MCP Layer:** Protocol servers wrapping each specialized agent
 - **Agents:** Transcription (Whisper), Vision (BLIP-2+YOLOv8), Generation (PDF/PPT)
 - **MCP Protocol:** Standardized tool interface for agent coordination
 - **AI Runtime:** llama.cpp with Metal acceleration
@@ -153,11 +154,12 @@ agentic-video-analyst/
 - [x] PyTorch 2.8.0 with MPS (Metal) support
 - [x] Transformers, OpenCV, moviepy, ReportLab, python-pptx
 - [x] System dependencies (ffmpeg 8.0.1, pkg-config)
-- [x] **Orchestrator Agent** - Llama 3.1 8B query routing
+- [x] **Orchestrator Agent** - Llama 3.1 8B query routing via MCP
 - [x] **Transcription Agent** - Whisper integration complete
 - [x] **Vision Agent** - BLIP-2 + YOLOv8 working
 - [x] **Generation Agent** - PDF/PPT creation with Calibri 15pt
-- [x] MCP server implementations
+- [x] MCP server implementations (transcription, vision, generation)
+- [x] MCP routing complete - orchestrator communicates via MCP protocol
 - [x] Multi-agent coordination and context management
 - [x] Comprehensive test suite with all agents
 - [x] gRPC protocol definitions
@@ -245,8 +247,9 @@ python main.py
 - [x] Main backend server with all agents
 
 ### Phase 3: Integration 🔄 IN PROGRESS
-- [x] Orchestrator routes queries to agents
-- [x] Multi-agent coordination working
+- [x] Orchestrator routes queries via MCP protocol layer
+- [x] MCP servers wrap all specialized agents
+- [x] Multi-agent coordination through MCP working
 - [x] Context management across agents
 - [ ] gRPC service definitions
 - [ ] Frontend React + Tauri UI
@@ -277,9 +280,10 @@ python main.py
 - ~2-3x faster inference vs CPU
 
 ### Agentic Architecture
-- Model Context Protocol (MCP) for tool discovery
-- Each agent registers capabilities
-- Main orchestrator routes queries
+- Model Context Protocol (MCP) for standardized agent communication
+- Each agent wrapped by MCP server with tool registration
+- Orchestrator routes through MCP protocol layer (satisfies assignment requirement)
+- Main orchestrator uses Llama 3.1 8B for intent understanding
 
 ### Local-First Design
 - All models run in RAM
