@@ -30,15 +30,15 @@ Sizes if you want to change:
 - medium: 1.5GB, what I'm using
 - large: 3GB, overkill for short videos
 
-## Vision Stuff
+## Vision Models
 
-**BLIP-2 for image captioning:**  
-Downloads automatically from HuggingFace when needed (~2.7GB). Describes what's in each frame.
+**BLIP-2 (image captioning):**  
+Auto-downloads from HuggingFace (~2.7GB). Generates scene descriptions for each frame.
 
-**YOLOv8 for object detection:**  
-Gets downloaded on first use (~6MB). Finds objects in frames.
+**YOLOv8 (object detection):**  
+Downloads on first use (~6MB). Identifies and locates objects in frames.
 
-Both are in requirements.txt, just `pip install` and you're good.
+Both in requirements.txt, just pip install.
 
 ## 4. Quick Start - Minimum Viable Demo
 

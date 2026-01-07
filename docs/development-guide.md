@@ -3,62 +3,56 @@
 ## What Got Done
 
 ### Days 1-2: Setup ✅
-- Got project structure sorted
-- Built out backend with agent framework
-- Set up MCP servers
-- Created venv with 50+ packages
-- Compiled llama-cpp-python with Metal
+- Project structure
+- Backend with agent framework
+- MCP servers
+- Python 3.12 venv with 50+ packages
+- llama-cpp-python with Metal
 - Downloaded Llama 3.1 8B (4.6GB)
-- Later upgraded to Python 3.12
 
-### Day 3: Built the Agents ✅
+### Day 3: Specialized Agents ✅
 
-**Transcription Agent:**
-- Extracts audio from video (moviepy)
-- Runs Whisper Medium for speech-to-text
-- Outputs timestamped transcript
-- Test: `test_transcription.py`
+**Transcription:**
+- moviepy extracts audio
+- Whisper Medium transcribes
+- Timestamped output
 
-**Vision Agent:**
-- Grabs frames from video (OpenCV)
-- BLIP-2 describes what's happening
-- YOLOv8 detects objects
-- Test: `test_vision.py`
+**Vision:**
+- OpenCV frame extraction
+- BLIP-2 scene descriptions
+- YOLOv8 object detection
 
-**Generation Agent:**
-- Makes PDF reports (ReportLab)
-- Creates PowerPoint slides (python-pptx)
-- Test: `test_generation.py`
+**Generation:**
+- ReportLab PDFs
+- python-pptx presentations
+- Calibri 15pt formatting
 
-### Day 4: Integration 🔄
-- [x] **Generation Agent**
-  - PDF report generation with ReportLab
-  - PowerPoint creation with python-pptx
-  - Integrates transcription and vision results
-  - Test script: test_generation.py
-  
-- [ ] **Frontend UI**
-  - File upload component
-  - Chat interface
-  - Display results
+### Day 4: Orchestration ✅
 
-- [ ] **Backend Orchestrator**
-  - Query routing with Llama 3.1
-  - Agent coordination via MCP
-  - gRPC service implementation
+**Orchestrator Agent:**
+- Llama 3.1 8B query understanding
+- Intent analysis (LLM + keyword fallback)
+- Routes to appropriate agents
+- Context tracking across queries
+- Test: `test_orchestrator.py`
 
-### Day 5: Integration
-- [ ] End-to-end flow: Upload → Transcribe → Display
-- [ ] Vision agent integration
-- [ ] Chat history persistence
-- [ ] Error handling
+**Integration:**
+- Backend server with all agents
+- Multi-agent coordination working
+- Run scripts (run.sh, test_all.sh)
 
-### Day 6: Demo Polish
-- [ ] PDF/PPT generation
-- [ ] Test all demo scenarios
-- [ ] UI polish
-- [ ] Documentation
-- [ ] Demo video recording
+**Bug Fixes:**
+- KeyError on intent dict
+- LLM hallucination prevention
+- Context bleeding in tests
+- PowerPoint formatting
+
+### Day 5-6: Frontend (TODO)
+- [ ] React + Tauri setup
+- [ ] Chat interface
+- [ ] Video upload
+- [ ] gRPC service
+- [ ] End-to-end testing
 
 ## Must-Have Features
 
@@ -68,26 +62,34 @@
 4. Chat interface - todo
 5. Report generation - works
 
-## Working on It
+## Testing
 
-**Testing stuff:**
+**Quick check:**
 ```bash
-cd backend
-source venv/bin/activate
+cd backend/tests
+source ../venv/bin/activate
 
-# Check if models work
-python tests/test_models.py
+# Orchestrator (no video needed)
+python test_orchestrator.py --intent-only
 
-# Test individual agents
-python tests/test_transcription.py uploads/video.mp4
-python tests/test_vision.py uploads/video.mp4
-python tests/test_generation.py
+# Full workflow
+python test_orchestrator.py ../uploads/video.mp4
+
+# All agents
+./test_all.sh ../uploads/video.mp4
 ```
 
-**Running backend:**
+**Individual agents:**
 ```bash
-python main.py  # starts FastAPI + gRPC server
-watchdog
+python test_transcription.py ../uploads/video.mp4
+python test_vision.py ../uploads/video.mp4
+python test_generation.py
+```
+
+**Backend server:**
+```bash
+cd backend
+./run.sh  # starts on port 50051
 ```
 
 ### Frontend Development
