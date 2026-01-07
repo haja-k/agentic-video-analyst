@@ -2,7 +2,7 @@
 
 > **Local AI-powered video analysis with multi-agent orchestration**
 
-**Status:** Environment Setup Complete | Model Download Required  
+**Status:** Orchestration Complete | Ready for Frontend Integration  
 **Platform:** MacBook Air M2, 16GB RAM | **Updated:** Jan 7, 2026  
 **Purpose:** Intel Senior GenAI Software Solutions Engineer Application
 
@@ -13,45 +13,81 @@
 **Agentic Video Analyst** is a fully local AI desktop application that uses multi-agent orchestration to analyze short videos (~1 min) through natural language queries. All AI inference runs offline with no cloud dependencies.
 
 **Key Capabilities:**
-- **Agentic Architecture:** Specialized AI agents coordinated via MCP protocol
+- **Intelligent Orchestration:** Llama 3.1 8B routes queries to specialized agents
 - **Speech-to-text:** Whisper-powered transcription with timestamps
 - **Visual Intelligence:** Object detection, scene description, OCR, graph analysis
 - **Natural Language Interface:** Chat-based video querying
 - **Report Generation:** Automated PDF/PPT creation from analysis
 - **Fully Local:** No internet required, all inference on-device
 
+**Current Status:**
+- ✅ All agents implemented and tested
+- ✅ Orchestrator routing queries intelligently
+- ✅ Multi-agent coordination working
+- ⏳ Frontend UI in development
+
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐         gRPC          ┌──────────────┐
-│   React +   │ ◄──────────────────► │   Python     │
-│   Tauri     │   Streaming RPC      │   Backend    │
-│  (Desktop)  │                       │   + Agents   │
-└─────────────┘                       └──────────────┘
-                                             │
-                                             ▼
-                                    ┌─────────────────┐
-                                    │   AI Models     │
-                                    │  (Local/Metal)  │
-                                    │                 │
-                                    │ • Llama 3.1 8B  │
-                                    │ • Whisper       │
-                                    │ • BLIP-2        │
-                                    └─────────────────┘
+┌─────────────┐         gRPC          ┌──────────────────────┐
+│   React +   │ ◄──────────────────► │   Python Backend     │
+│   Tauri     │   Streaming RPC      │                      │
+│  (Desktop)  │                       │  ┌────────────────┐  │
+└─────────────┘                       │  │ Orchestrator   │  │
+                                      │  │ (Llama 3.1 8B) │  │
+                                      │  └────────┬───────┘  │
+                                      │           │          │
+                                      │  ┌────────┼────────┐ │
+                                      │  ↓        ↓        ↓ │
+                                      │ Trans   Vision   Gen │
+                                      │ Agent   Agent  Agent │
+                                      └──────────────────────┘
+                                                 │
+                                                 ▼
+                                      ┌─────────────────┐
+                                      │   AI Models     │
+                                      │  (Local/Metal)  │
+                                      │                 │
+                                      │ • Llama 3.1 8B  │
+                                      │ • Whisper       │
+                                      │ • BLIP-2+YOLOv8 │
+                                      └─────────────────┘
 ```
 
 ### Components
-- **Frontend:** React + Tauri (desktop app)
-- **Backend:** Python FastAPI + gRPC
-- **Agents:** Transcription, Vision, Generation (MCP protocol)
+- **Frontend:** React + Tauri (desktop app) - In Development
+- **Backend:** Python with multi-agent orchestration
+- **Orchestrator:** Llama 3.1 8B for query understanding and routing
+- **Agents:** Transcription (Whisper), Vision (BLIP-2+YOLOv8), Generation (PDF/PPT)
+- **MCP Protocol:** Standardized tool interface for agent coordination
 - **AI Runtime:** llama.cpp with Metal acceleration
-- **Models:** Llama 3.1 8B, Whisper Medium, BLIP-2
 
 ---
 
 ## 🎬 Testing Agents
+
+### Test Orchestrator (Query Routing & Multi-Agent Coordination)
+```bash
+cd backend/tests
+source ../venv/bin/activate
+
+# Test intent analysis only (quick test)
+python test_orchestrator.py --intent-only
+
+# Full orchestrator test with video
+python test_orchestrator.py ../uploads/your_video.mp4
+```
+
+The orchestrator uses Llama 3.1 8B to understand queries and route to appropriate agents.
+
+**Example queries tested:**
+- "Transcribe the video"
+- "What objects can you see?"
+- "Are there any graphs or charts?"
+- "Create a PowerPoint with key points"
+- "Summarize our discussion"
 
 ### Test Transcription Agent
 ```bash
@@ -88,14 +124,22 @@ Generates `results/video_report.pdf` and `results/video_presentation.pptx` from 
 agentic-video-analyst/
 ├── backend/
 │   ├── venv/              # Virtual env (50+ packages) ✅
-│   ├── models/            # AI models (download needed) ⚠️
-│   ├── agents/            # AI agents (transcription, vision, generation)
-│   ├── mcp_servers/       # MCP protocol implementations
+│   ├── models/            # AI models (Llama 3.1 8B downloaded) ✅
+│   ├── agents/            # AI agents ✅
+│   │   ├── orchestrator_agent.py    # Query routing with Llama 3.1 8B
+│   │   ├── transcription_agent.py   # Whisper integration
+│   │   ├── vision_agent.py          # BLIP-2 + YOLOv8
+│   │   └── generation_agent.py      # PDF/PPT creation
+│   ├── mcp_servers/       # MCP protocol implementations ✅
 │   ├── tests/             # Agent test scripts ✅
-│   └── main.py            # Backend entry point
+│   │   ├── test_orchestrator.py     # Orchestrator tests
+│   │   ├── test_all.sh              # Run all tests
+│   │   └── results/                 # Test outputs
+│   ├── run.sh             # Start backend server ✅
+│   └── main.py            # Backend entry point ✅
 ├── frontend/              # React + Tauri app (TODO)
 ├── proto/                 # gRPC definitions ✅
-├── docs/                  # Documentation
+├── docs/                  # Documentation ✅
 └── README.md              # This file
 ```
 
@@ -103,14 +147,19 @@ agentic-video-analyst/
 
 ## ✅ What's Already Setup
 
-- [x] Python 3.9 virtual environment with 50+ packages
+- [x] Python 3.12 virtual environment with 50+ packages
 - [x] llama-cpp-python with Metal acceleration (M2 GPU)
 - [x] openai-whisper for speech-to-text
-- [x] PyTorch 2.1.2 with MPS (Metal) support
+- [x] PyTorch 2.8.0 with MPS (Metal) support
 - [x] Transformers, OpenCV, moviepy, ReportLab, python-pptx
 - [x] System dependencies (ffmpeg 8.0.1, pkg-config)
-- [x] Agent framework (transcription, vision, generation)
-- [x] MCP server implementations (custom, Python 3.9 compatible)
+- [x] **Orchestrator Agent** - Llama 3.1 8B query routing
+- [x] **Transcription Agent** - Whisper integration complete
+- [x] **Vision Agent** - BLIP-2 + YOLOv8 working
+- [x] **Generation Agent** - PDF/PPT creation with Calibri 15pt
+- [x] MCP server implementations
+- [x] Multi-agent coordination and context management
+- [x] Comprehensive test suite with all agents
 - [x] gRPC protocol definitions
 
 ---
@@ -191,26 +240,23 @@ python main.py
 - [x] **TranscriptionAgent** - Whisper integration complete
 - [x] **VisionAgent** - BLIP-2 + YOLOv8 integration complete
 - [x] **GenerationAgent** - PDF/PPT creation complete
-- [ ] MCP server implementations (next)
-- [ ] Main orchestrator with Llama 3.1 8B
+- [x] **OrchestratorAgent** - Llama 3.1 8B query routing complete
+- [x] MCP server implementations
+- [x] Main backend server with all agents
 
 ### Phase 3: Integration 🔄 IN PROGRESS
-- Environment with all dependencies
-- Metal-accelerated AI libraries
-- Agent & MCP framework
+- [x] Orchestrator routes queries to agents
+- [x] Multi-agent coordination working
+- [x] Context management across agents
+- [ ] gRPC service definitions
+- [ ] Frontend React + Tauri UI
+- [ ] Persistent chat storage
 
-### Phase 2: Core Features 🔄 IN PROGRESS
-- [ ] Download AI models
-- [ ] Implement TranscriptionAgent with Whisper
-- [ ] Implement VisionAgent with BLIP-2
-- [ ] Basic chat UI
-- [ ] Backend orchestration
-
-### Phase 3: Polish 📅 PLANNED
-- [ ] GenerationAgent (PDF/PPT)
-- [ ] Frontend React + Tauri
-- [ ] End-to-end testing
-- [ ] Demo scenarios
+### Phase 4: Polish 📅 PLANNED
+- [ ] Complete frontend UI implementation
+- [ ] End-to-end gRPC testing
+- [ ] Desktop app packaging (Tauri)
+- [ ] Demo scenarios and documentation
 
 ---
 
@@ -328,6 +374,19 @@ pip list | grep -E "llama|whisper|torch"
 ```bash
 python -c "import torch; print(f'MPS: {torch.backends.mps.is_available()}')"
 # Should output: MPS: True
+```
+
+**Orchestrator test fails?**
+```bash
+# Ensure venv is activated
+cd backend/tests
+source ../venv/bin/activate
+
+# Test with intent analysis only (no video needed)
+python test_orchestrator.py --intent-only
+
+# Check if model is loaded correctly
+ls -lh ../models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
 ```
 
 ---
