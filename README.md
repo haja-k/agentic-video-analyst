@@ -341,4 +341,4 @@ python -c "import torch; print(f'MPS: {torch.backends.mps.is_available()}')"
 
 ---
 
-**Current Status:** Ready to start core implementation after model download ��
+**Current Status:** Ready to start core implementation after model download 

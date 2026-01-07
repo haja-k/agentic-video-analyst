@@ -24,7 +24,7 @@ soundfile==0.12.1
 
 # Image Processing
 Pillow==10.2.0
-# numpy already installed via llama-cpp-python
+numpy<2.0  # Pin to 1.x for OpenCV compatibility
 
 # PDF/PPT Generation
 reportlab==4.0.9

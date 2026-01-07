@@ -20,18 +20,18 @@ def test_llama():
     try:
         from llama_cpp import Llama
         
-        # Check for model (adjust path since we're in tests/ subdirectory)
+        # Check for model (handle both running from backend/ and from tests/)
         model_options = [
-            "../models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
-            "../../models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+            "models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",  # From backend/
+            "../models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",  # From tests/
+            "models/llama-3.1-8b-instruct.Q4_K_M.gguf",
             "../models/llama-3.1-8b-instruct.Q4_K_M.gguf",
-            "../../models/llama-3.1-8b-instruct.Q4_K_M.gguf",
+            "models/llama-3.2-3b-instruct.Q4_K_M.gguf",
             "../models/llama-3.2-3b-instruct.Q4_K_M.gguf",
-            "../../models/llama-3.2-3b-instruct.Q4_K_M.gguf",
+            "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
             "../models/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
-            "../../models/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
-            "../models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-            "../../models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"  # Fallback
+            "models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+            "../models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"  # Fallback
         ]
         
         model_path = None
