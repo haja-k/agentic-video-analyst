@@ -1,0 +1,51 @@
+# Core Backend Dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# gRPC
+grpcio==1.60.0
+grpcio-tools==1.60.0
+protobuf==4.25.2
+
+# AI/ML - llama.cpp with Metal support for M2
+llama-cpp-python==0.2.90  # Will be installed with Metal flags
+
+# Video Processing
+opencv-python==4.9.0.80
+moviepy==1.0.3
+ffmpeg-python==0.2.0
+
+# Audio Processing (for transcription)
+# Using openai-whisper (compatible with all systems)
+openai-whisper==20231117
+librosa==0.10.1
+soundfile==0.12.1
+
+# Image Processing
+Pillow==10.2.0
+# numpy already installed via llama-cpp-python
+
+# PDF/PPT Generation
+reportlab==4.0.9
+python-pptx==0.6.23
+
+# MCP Server Framework (Note: MCP SDK requires Python 3.10+, will implement custom)
+# mcp==0.9.0  # Skipping for now, will use custom MCP implementation
+pydantic==2.5.3
+
+# Utilities
+python-dotenv==1.0.0
+aiofiles==23.2.1
+rich==13.7.0  # For better CLI output
+
+# Optional: Hugging Face models (lightweight)
+transformers==4.36.2
+torch==2.8.0
+torchvision==0.23.0
+sentence-transformers==2.3.1
+ultralytics==8.3.248
+
+# Database for chat history
+sqlalchemy==2.0.25
+aiosqlite==0.19.0
