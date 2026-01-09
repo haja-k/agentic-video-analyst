@@ -121,6 +121,25 @@ class OrchestratorAgent(BaseAgent):
         Use Llama to analyze user intent and determine required actions
         """
         
+        # Quick check for report generation - don't use LLM for this
+        query_lower = query.lower()
+        if "pdf" in query_lower or ("generate" in query_lower and "report" in query_lower):
+            return {
+                "primary_action": "generate_pdf",
+                "additional_actions": [],
+                "needs_clarification": False,
+                "clarification_question": "",
+                "reasoning": "report generation keyword match"
+            }
+        if "pptx" in query_lower or "powerpoint" in query_lower or ("generate" in query_lower and "presentation" in query_lower):
+            return {
+                "primary_action": "generate_pptx",
+                "additional_actions": [],
+                "needs_clarification": False,
+                "clarification_question": "",
+                "reasoning": "presentation generation keyword match"
+            }
+        
         available_actions = """
         - transcribe: Extract speech-to-text from video
         - detect_objects: Find and identify objects in video frames
@@ -232,16 +251,12 @@ User query: {query}"""
         elif "pdf" in query_lower or "report" in query_lower:
             intent["primary_action"] = "generate_pdf"
             logger.info(f"Keyword match: generate_pdf")
-            if not context.get("transcription") or not context.get("vision_results"):
-                intent["needs_clarification"] = True
-                intent["clarification_question"] = "I'll need to analyze the video first. Should I transcribe and analyze it before generating the report?"
+            # Generate with whatever context is available (even if empty)
                 
         elif "powerpoint" in query_lower or "pptx" in query_lower or "presentation" in query_lower:
             intent["primary_action"] = "generate_pptx"
             logger.info(f"Keyword match: generate_pptx")
-            if not context.get("transcription") or not context.get("vision_results"):
-                intent["needs_clarification"] = True
-                intent["clarification_question"] = "I'll need to analyze the video first. Should I transcribe and analyze it before creating the presentation?"
+            # Generate with whatever context is available (even if empty)
                 
         # Check for summary - improved matching
         elif any(word in query_lower for word in ["summary", "summarize", "summarise", "overview", "recap"]):
@@ -312,7 +327,7 @@ User query: {query}"""
                                 "vision_results": context.get("vision_results"),
                                 "summary": context.get("summary", "")
                             },
-                            "output_path": "results/report"
+                            "output_path": "tests/results/report"
                         }
                     )
                     results["pdf"] = pdf_result
@@ -328,7 +343,7 @@ User query: {query}"""
                                 "vision_results": context.get("vision_results"),
                                 "summary": context.get("summary", "")
                             },
-                            "output_path": "results/report"
+                            "output_path": "tests/results/report"
                         }
                     )
                     results["pptx"] = pptx_result

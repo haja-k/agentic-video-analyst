@@ -54,14 +54,26 @@ class GenerationAgent(BaseAgent):
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = str(results_dir / f"report_{timestamp}.{format_type}")
+        else:
+            # Ensure the output directory exists when path is provided
+            output_dir = Path(output_path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Add timestamp and extension if path doesn't have them
+            if not output_path.endswith(f".{format_type}"):
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                output_path = f"{output_path}_{timestamp}.{format_type}"
         
         logger.info(f"Generating {format_type.upper()} document: {output_path}")
         
+        # Extract the actual content dict
+        content = input_data.get("content", input_data)
+        
         try:
             if format_type == "pdf":
-                return await self.generate_pdf(input_data, output_path)
+                return await self.generate_pdf(content, output_path)
             elif format_type == "pptx":
-                return await self.generate_pptx(input_data, output_path)
+                return await self.generate_pptx(content, output_path)
             else:
                 return {"error": f"Unsupported format: {format_type}"}
         except Exception as e:
@@ -76,6 +88,11 @@ class GenerationAgent(BaseAgent):
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
         from reportlab.platypus import Table, TableStyle
         from reportlab.lib import colors
+        
+        # Debug: Log what content we received
+        logger.info(f"PDF content keys: {content.keys()}")
+        logger.info(f"Transcription present: {bool(content.get('transcription'))}")
+        logger.info(f"Vision results present: {bool(content.get('vision_results'))}")
         
         doc = SimpleDocTemplate(output_path, pagesize=letter)
         styles = getSampleStyleSheet()
