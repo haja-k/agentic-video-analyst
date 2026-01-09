@@ -53,6 +53,8 @@ Thumbs.db
 
 # Logs
 *.log
+backend/logs/
+backend/nohup.out
 
 # Frontend
 frontend/node_modules/
@@ -64,6 +66,7 @@ frontend/.tauri/
 # Generated
 *.pdf
 *.pptx
+backend/generated/
 proto/*_pb2.py
 proto/*_pb2_grpc.py
 proto/*.d.ts

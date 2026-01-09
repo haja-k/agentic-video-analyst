@@ -9,8 +9,8 @@ import grpc
 # Add parent directory to path to import generated proto files
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import video_analysis_pb2
-import video_analysis_pb2_grpc
+from generated import video_analysis_pb2
+from generated import video_analysis_pb2_grpc
 
 async def test_connection():
     """Test if server is accepting connections"""

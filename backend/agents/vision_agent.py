@@ -41,7 +41,7 @@ class VisionAgent(BaseAgent):
             self.caption_model.to(self.device)
             
             logger.info("Loading YOLOv8 nano model for object detection")
-            self.detector_model = YOLO("yolov8n.pt")
+            self.detector_model = YOLO("models/yolov8n.pt")
             
             logger.info("✓ Vision models loaded")
             

@@ -24,8 +24,8 @@ from mcp_servers.transcription_mcp import TranscriptionMCPServer
 from mcp_servers.vision_mcp import VisionMCPServer
 from mcp_servers.generation_mcp import GenerationMCPServer
 
-import video_analysis_pb2
-import video_analysis_pb2_grpc
+from generated import video_analysis_pb2
+from generated import video_analysis_pb2_grpc
 
 # Initialize rich console for better logging
 console = Console()

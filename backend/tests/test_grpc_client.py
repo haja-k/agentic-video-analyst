@@ -11,8 +11,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-import video_analysis_pb2
-import video_analysis_pb2_grpc
+from generated import video_analysis_pb2
+from generated import video_analysis_pb2_grpc
 
 console = Console()
 
