@@ -47,11 +47,39 @@
 - Context bleeding in tests
 - PowerPoint formatting
 
-### Day 5-6: Frontend (TODO)
+### Days 5-6: gRPC Service ✅
+
+**Implementation:**
+- 5 gRPC endpoints fully functional
+- Video upload with OpenCV metadata extraction
+- Query processing through orchestrator
+- Streaming responses for real-time feedback
+- Chat history persistence per session
+- PDF/PPTX generation with session context
+
+**Session Management:**
+- Store orchestrator results per session
+- Accumulate transcription and vision analysis
+- Context-aware report generation
+- Reports include all session analysis
+
+**Bug Fixes:**
+- Empty PDF issue: Added session_results storage
+- PDF output directory: Changed to tests/results/
+- Intent detection: Early keyword check for reports
+- Directory creation: Handles explicit paths properly
+
+**Testing:**
+- All 6 test scenarios passing
+- Test suite: `test_grpc_client.py`
+- Video: 5.38 MB successfully processed
+- PDF: 3.9KB with full content
+
+### Next: Frontend Integration (Phase 6)
 - [ ] React + Tauri setup
-- [ ] Chat interface
-- [ ] Video upload
-- [ ] gRPC service
+- [ ] Chat interface connected to gRPC
+- [ ] Video upload component
+- [ ] Real-time streaming display
 - [ ] End-to-end testing
 
 ## Must-Have Features
@@ -63,6 +91,19 @@
 5. Report generation - works
 
 ## Testing
+
+**gRPC Service (Full Integration):**
+```bash
+cd backend
+source venv/bin/activate
+
+# Start server
+./run.sh
+
+# Run comprehensive test
+python tests/test_grpc_client.py uploads/CunkOnEarth.mp4
+```
+Tests all 6 scenarios: upload, transcription, vision, streaming, history, PDF generation.
 
 **Quick check:**
 ```bash
