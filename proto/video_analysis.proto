@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package video_analysis;
+
+// Video Analysis Service
+service VideoAnalysisService {
+  // Upload and process a video file
+  rpc UploadVideo(UploadVideoRequest) returns (UploadVideoResponse);
+  
+  // Send a query about the video
+  rpc QueryVideo(QueryRequest) returns (QueryResponse);
+  
+  // Stream responses for long-running queries
+  rpc StreamQuery(QueryRequest) returns (stream QueryResponse);
+  
+  // Get chat history
+  rpc GetChatHistory(ChatHistoryRequest) returns (ChatHistoryResponse);
+  
+  // Generate report (PDF/PPT)
+  rpc GenerateReport(ReportRequest) returns (ReportResponse);
+}
+
+// Upload video request
+message UploadVideoRequest {
+  string filename = 1;
+  bytes content = 2;
+  string mime_type = 3;
+}
+
+message UploadVideoResponse {
+  string video_id = 1;
+  string status = 2;
+  string message = 3;
+  VideoMetadata metadata = 4;
+}
+
+message VideoMetadata {
+  int32 duration_seconds = 1;
+  int32 width = 2;
+  int32 height = 3;
+  float fps = 4;
+  int64 file_size = 5;
+}
+
+// Query request
+message QueryRequest {
+  string session_id = 1;
+  string video_id = 2;
+  string query = 3;
+  map<string, string> context = 4;
+}
+
+message QueryResponse {
+  string response_id = 1;
+  string query = 2;
+  string response_text = 3;
+  ResponseType type = 4;
+  repeated Artifact artifacts = 5;
+  float confidence = 6;
+  repeated ClarificationOption clarifications = 7;
+}
+
+enum ResponseType {
+  TEXT = 0;
+  TRANSCRIPTION = 1;
+  OBJECT_DETECTION = 2;
+  IMAGE_CAPTION = 3;
+  GRAPH_ANALYSIS = 4;
+  SUMMARY = 5;
+  CLARIFICATION_NEEDED = 6;
+}
+
+message Artifact {
+  string type = 1;  // "image", "pdf", "pptx", "json"
+  string path = 2;
+  bytes data = 3;
+  map<string, string> metadata = 4;
+}
+
+message ClarificationOption {
+  string option_id = 1;
+  string description = 2;
+}
+
+// Chat history
+message ChatHistoryRequest {
+  string session_id = 1;
+  int32 limit = 2;
+}
+
+message ChatHistoryResponse {
+  repeated ChatMessage messages = 1;
+}
+
+message ChatMessage {
+  string message_id = 1;
+  string role = 2;  // "user" or "assistant"
+  string content = 3;
+  int64 timestamp = 4;
+  repeated Artifact artifacts = 5;
+}
+
+// Report generation
+message ReportRequest {
+  string session_id = 1;
+  string format = 2;  // "pdf" or "pptx"
+  ReportContent content = 3;
+}
+
+message ReportContent {
+  string title = 1;
+  repeated string sections = 2;
+  map<string, string> data = 3;
+}
+
+message ReportResponse {
+  string status = 1;
+  string file_path = 2;
+  bytes file_data = 3;
+  string message = 4;
+}
