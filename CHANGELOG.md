@@ -4,6 +4,139 @@ Tracking what's been done, when things broke, and how I fixed them.
 
 ---
 
+## [0.5.0] - 2026-01-09
+
+### 🎯 Phase 5 Complete - gRPC Service + Report Generation
+
+**IMPLEMENTED**: Full gRPC service with 5 endpoints
+- `UploadVideo`: Video upload with metadata extraction (OpenCV)
+- `QueryVideo`: Natural language queries through orchestrator
+- `StreamQuery`: Real-time streaming responses
+- `GetChatHistory`: Session-based message history
+- `GenerateReport`: PDF/PPTX generation from session context
+- Message size limits: 50MB for video uploads
+- Server runs on port 50051 with graceful shutdown
+- Test suite: `backend/tests/test_grpc_client.py` ✅
+
+**FIXED**: Empty PDF generation issue
+- Root cause: Session results not stored/passed to generation agent
+- Added `session_results` dict in main.py to preserve orchestrator outputs
+- Store transcription and vision_results after each QueryVideo call
+- GenerateReport now uses stored session_results instead of parsing chat messages
+- Fixed content extraction: generation_agent.py now extracts nested "content" dict
+- PDFs now contain full transcription text and vision analysis
+- File size increased from 1.6KB (empty) to 3.9KB (with content)
+
+**FIXED**: PDF output directory
+- Changed from `backend/results/` to `tests/results/`
+- Updated orchestrator_agent.py output paths for both PDF and PPTX
+- All generated reports now in proper test results folder
+- Consistent with other test outputs
+
+**FIXED**: Report generation intent detection
+- LLM was misinterpreting "Generate a PDF report" as "analyze_graphs"
+- Added early keyword check in analyze_intent() before LLM processing
+- "pdf", "report", "pptx", "powerpoint" now bypass LLM analysis
+- Prevents routing errors and ensures reliable report generation
+- Reports generate consistently on first attempt
+
+**FIXED**: Directory creation in generation agent
+- Agent now creates parent directory even when output_path is explicit
+- Extracts directory from output_path and creates with parents=True
+- Handles both None (auto-generate) and explicit path scenarios
+- Adds timestamps to prevent filename conflicts
+- No more "FileNotFoundError" when generating reports
+
+**IMPROVED**: Session context management
+- Store actual agent results (not just response text)
+- Accumulate transcription, vision_results, and summary per session
+- Pass complete context to orchestrator for report generation
+- Reports include all analysis from multi-turn conversations
+- Proper data structures match what PDF generator expects
+
+**Testing Results:**
+```
+✅ Video Upload: 5.38 MB, 50s duration, 360x640, 25fps
+✅ Transcription: Full audio extraction with timestamps
+✅ Object Detection: chair, person, tie + scene descriptions
+✅ Streaming Query: Real-time progress updates
+✅ Chat History: 6 messages preserved
+✅ PDF Report: 3.9KB with transcription + vision analysis
+```
+
+**Current Status:**
+- Backend: 100% complete ✅
+- gRPC Service: All endpoints functional ✅
+- Report Generation: Working with full context ✅
+- Phase 5: COMPLETE ✅
+- Next: Frontend development (Phase 6)
+
+---
+
+## [0.4.0] - 2026-01-08
+
+### 🐛 MCP Routing Bug Fixes - Phase 4 COMPLETE
+
+**FIXED**: Critical keyword matching order issue
+- Graph/chart queries now prioritized BEFORE generic "see" matching
+- "Are there any graphs?" now correctly routes to vision_analysis instead of transcription
+- Moved graph detection to line 216 (before object detection at line 222)
+- File: `backend/agents/orchestrator_agent.py`
+
+**FIXED**: Vision results parsing with wrong data structure
+- Objects are list of dicts with "class" key, not dict with classes as keys
+- Changed from `frame["objects"].keys()` to iterating `frame["objects"]` list
+- Now properly extracts object classes: chair, person, tie, etc.
+- File: `backend/agents/orchestrator_agent.py` line 455-460
+
+**FIXED**: MCP task mapping returning incomplete results
+- Changed `detect_objects` task from "detect_objects" → "analyze"
+- Changed `caption_video` task from "caption" → "analyze"
+- Both now return BOTH objects AND captions (was returning nothing or only objects)
+- File: `backend/mcp_servers/vision_mcp.py` line 90-93
+
+**FIXED**: Response generation showing incomplete data
+- Object detection queries now show detected objects list
+- Scene description queries now show captions ("a woman sitting in a chair...")
+- Graph queries show explicit "No graphs or charts detected" message
+- Report generation shows complete file paths with .pdf/.pptx extensions
+- Files: `backend/agents/orchestrator_agent.py` lines 445-500
+
+**IMPROVED**: Response quality across all query types
+- Test 1 (Transcribe): Shows full transcript ✅
+- Test 2 (Objects): Lists detected objects + scene descriptions ✅
+- Test 3 (Scene description): Shows detailed captions ✅
+- Test 4 (Graph detection): Analyzes frames + explicit "no graphs" message ✅
+- Test 5 (PDF report): Shows complete path with extension ✅
+- Test 6 (PowerPoint): Shows complete path with extension ✅
+- Test 7 (Summarize): Synthesizes context properly ✅
+
+**UPDATED**: Documentation
+- backend/tests/README.md: Added MCP routing explanation and architecture diagram
+- AI-CONTEXT.md: Updated with Phase 4 completion and all bug fixes
+- All docs now reflect working MCP routing with proper response generation
+
+**CODE QUALITY**:
+- Removed debug logging after verification
+- Added proper error handling for vision result parsing
+- Consistent response formatting across all query types
+- Vision agent task mapping matches orchestrator expectations
+
+**Testing Results:**
+- All 7 test queries producing correct outputs
+- Objects detected: chair, person, tie (real data from video)
+- Scene descriptions showing in responses
+- Graph detection explicitly reporting results
+- Report file paths complete with extensions
+
+**Current Status:**
+- Backend: 100% complete with MCP routing working correctly ✅
+- All agents tested and verified via MCP protocol ✅
+- Ready for gRPC service implementation
+- Ready for frontend development
+
+---
+
 ## [0.3.0] - 2026-01-07 Late Evening
 
 ### 🎯 Orchestrator Implementation - COMPLETE
@@ -203,11 +336,13 @@ Upgraded from Python 3.9.6 to 3.12.12 because why not use the latest?
 
 ## Version Timeline
 
-| Version | Date       | What Happened             |
-|---------|------------|---------------------------|
-| 0.0.1   | Jan 5      | Started project           |
-| 0.1.0   | Jan 6      | Got environment working   |
-| 0.2.0   | Jan 7      | Upgraded to Python 3.12   |
+| Version | Date       | What Happened                      |
+|---------|------------|------------------------------------|
+| 0.0.1   | Jan 5      | Started project                    |
+| 0.1.0   | Jan 6      | Got environment working            |
+| 0.2.0   | Jan 7 AM   | Upgraded to Python 3.12            |
+| 0.3.0   | Jan 7 PM   | Orchestrator implemented           |
+| 0.4.0   | Jan 9      | MCP routing bugs fixed             |
 
 ---
 
@@ -235,17 +370,27 @@ Upgraded from Python 3.9.6 to 3.12.12 because why not use the latest?
 
 **faster-whisper:** Broke with ffmpeg 8.0. Went with openai-whisper instead.
 
+**Graph query routing:** Keyword order mattered - "see" matched before "graph". Fixed by reordering priority.
+
+**Vision results parsing:** Expected dict structure but got list of dicts. Fixed object extraction logic.
+
+**MCP task mapping:** Was sending wrong task names ("caption" vs "describe_scene"). Changed both to "analyze".
+
+**Incomplete responses:** Vision results not showing objects/captions. Fixed by correcting task mapping and parsing.
+
 ---
 
 ## What's Left
 
 Check [development-guide.md](docs/development-guide.md) for the full timeline. TL;DR:
-- Agents are done
-- Need to wire up frontend
-- Add the chat interface
-- Polish for demo
+- ✅ Agents are done
+- ✅ MCP routing working
+- ⏳ Need to wire up gRPC service
+- ⏳ Add the frontend UI
+- ⏳ Polish for demo
 
 ---
 
-**Last Updated:** January 7, 2026  
-**Python:** 3.12.12 (upgraded from 3.9.6)
+**Last Updated:** January 9, 2026  
+**Python:** 3.12.12 (upgraded from 3.9.6)  
+**Phase:** 4/6 Complete (Backend + MCP Routing Fully Working)

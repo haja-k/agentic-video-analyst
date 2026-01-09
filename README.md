@@ -2,8 +2,8 @@
 
 > **Local AI-powered video analysis with multi-agent orchestration**
 
-**Status:** MCP Routing Complete | Ready for Frontend Integration  
-**Platform:** MacBook Air M2, 16GB RAM | **Updated:** Jan 8, 2026  
+**Status:** Phase 5 Complete - gRPC Service Live | Ready for Frontend Integration  
+**Platform:** MacBook Air M2, 16GB RAM | **Updated:** Jan 9, 2026  
 **Purpose:** Intel Senior GenAI Software Solutions Engineer Application
 
 ---
@@ -24,7 +24,9 @@
 - ✅ All agents implemented and tested
 - ✅ Orchestrator routing queries via MCP protocol
 - ✅ Multi-agent coordination through MCP servers
-- ⏳ Frontend UI in development
+- ✅ gRPC service with 5 endpoints fully functional
+- ✅ PDF/PPTX report generation with session context
+- ⏳ Frontend UI in development (Phase 6)
 
 ---
 
@@ -59,15 +61,37 @@
 ### Components
 - **Frontend:** React + Tauri (desktop app) - In Development
 - **Backend:** Python with multi-agent orchestration
+- **gRPC Service:** 5 endpoints (UploadVideo, QueryVideo, StreamQuery, GetChatHistory, GenerateReport)
 - **Orchestrator:** Llama 3.1 8B for query understanding and routing via MCP
 - **MCP Layer:** Protocol servers wrapping each specialized agent
 - **Agents:** Transcription (Whisper), Vision (BLIP-2+YOLOv8), Generation (PDF/PPT)
 - **MCP Protocol:** Standardized tool interface for agent coordination
 - **AI Runtime:** llama.cpp with Metal acceleration
+- **Session Management:** Context-aware report generation with stored results
 
 ---
 
-## 🎬 Testing Agents
+## 🎬 Testing
+
+### Test gRPC Service (Full Integration)
+```bash
+cd backend
+source venv/bin/activate
+
+# Start gRPC server (runs in background)
+./run.sh
+
+# Run comprehensive test suite
+python tests/test_grpc_client.py uploads/CunkOnEarth.mp4
+```
+
+**Tests all endpoints:**
+- ✅ Video upload with metadata extraction
+- ✅ Transcription queries via orchestrator
+- ✅ Vision analysis (objects + scene descriptions)
+- ✅ Streaming query responses
+- ✅ Chat history persistence
+- ✅ PDF report generation with session context
 
 ### Test Orchestrator (Query Routing & Multi-Agent Coordination)
 ```bash
