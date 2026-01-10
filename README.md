@@ -217,7 +217,23 @@ cd frontend && npm run dev
 - **Session Persistence**: Video registry and analysis results survive server restarts
 - **Local-First**: All models run in RAM, suitable for confidential content
 
-| Component | RAM Usage |
+### Hardware Acceleration Note
+
+**Current Implementation (M2 Mac):**
+This project uses **Apple Metal** for GPU acceleration due to development on M2 hardware. Metal provides optimal performance on Apple Silicon with 2-3x speedup over CPU-only inference.
+
+**Intel Hardware Deployment:**
+For production deployment on Intel hardware, this architecture is designed to swap Metal with **OpenVINO** optimization:
+- Replace `llama-cpp-python` Metal build with OpenVINO-optimized version
+- Use OpenVINO Runtime for Whisper and vision models
+- Leverage Intel CPU/iGPU/discrete GPU acceleration
+- Maintain same MCP protocol and agent architecture
+
+The modular design allows acceleration backend changes without modifying core agent logic. For Intel deployments, OpenVINO would provide similar or better performance with Intel's AI acceleration technologies (AVX-512, Intel AMX, Intel GPU).
+
+---
+
+## Resource Usage (M2 Mac)
 |-----------|-----------|
 | Llama 3.1 8B | ~5-6GB |
 | Whisper Medium | ~1.5GB |
