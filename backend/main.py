@@ -54,6 +54,32 @@ class VideoAnalysisServicer(video_analysis_pb2_grpc.VideoAnalysisServiceServicer
         # Ensure uploads directory exists
         self.uploads_dir = Path("uploads")
         self.uploads_dir.mkdir(exist_ok=True)
+        
+        # Path for video registry
+        self.video_registry_path = self.uploads_dir / "video_registry.json"
+        
+        # Load existing video mappings from disk
+        self._load_video_registry()
+    
+    def _load_video_registry(self):
+        """Load video ID to path mappings from disk"""
+        if self.video_registry_path.exists():
+            try:
+                with open(self.video_registry_path, 'r') as f:
+                    self.videos = json.load(f)
+                logger.info(f"Loaded {len(self.videos)} video mappings from registry")
+            except Exception as e:
+                logger.error(f"Failed to load video registry: {e}")
+                self.videos = {}
+    
+    def _save_video_registry(self):
+        """Save video ID to path mappings to disk"""
+        try:
+            with open(self.video_registry_path, 'w') as f:
+                json.dump(self.videos, f, indent=2)
+            logger.debug(f"Saved video registry with {len(self.videos)} entries")
+        except Exception as e:
+            logger.error(f"Failed to save video registry: {e}")
     
     async def UploadVideo(self, request, context):
         """Handle video upload and extract metadata"""
@@ -78,6 +104,9 @@ class VideoAnalysisServicer(video_analysis_pb2_grpc.VideoAnalysisServiceServicer
             
             # Store video reference
             self.videos[video_id] = str(video_path)
+            
+            # Persist to disk
+            self._save_video_registry()
             
             logger.info(f"Video uploaded: {video_id} ({request.filename})")
             
@@ -238,6 +267,21 @@ class VideoAnalysisServicer(video_analysis_pb2_grpc.VideoAnalysisServiceServicer
                 "video_path": video_path
             })
             
+            # Store results in session for report generation
+            if session_id not in self.session_results:
+                self.session_results[session_id] = {}
+            
+            # Accumulate results from this query
+            query_results = result.get("results", {})
+            if "transcription" in query_results:
+                self.session_results[session_id]["transcription"] = query_results["transcription"]
+            if "vision" in query_results:
+                self.session_results[session_id]["vision_results"] = query_results["vision"]
+            if "summary" in query_results:
+                self.session_results[session_id]["summary"] = query_results["summary"]
+            
+            logger.info(f"Session {session_id} results updated: {list(self.session_results[session_id].keys())}")
+            
             # Map response type and create artifacts
             response_type = self._map_response_type(result.get("actions_taken", []))
             artifacts = self._create_artifacts(result)
@@ -313,15 +357,19 @@ class VideoAnalysisServicer(video_analysis_pb2_grpc.VideoAnalysisServiceServicer
     async def GenerateReport(self, request, context):
         """Generate PDF or PowerPoint report"""
         try:
+            logger.info(f"GenerateReport called for session: {request.session_id}, format: {request.format}")
+            
+            # Get session context with actual analysis results
+            session_context = self.session_results.get(request.session_id, {})
+            logger.info(f"Session context keys: {list(session_context.keys())}")
+            logger.info(f"Available sessions: {list(self.session_results.keys())}")
+            
             # Build content for report generation
             content_dict = {
                 "title": request.content.title,
                 "sections": list(request.content.sections),
                 "data": dict(request.content.data)
             }
-            
-            # Get session context with actual analysis results
-            session_context = self.session_results.get(request.session_id, {})
             
             # Use generation agent directly through orchestrator context
             query = f"Generate a {request.format.upper()} report with title: {content_dict['title']}"

@@ -1,6 +1,101 @@
 # Changelog
 
-Tracking what's been done, when things broke, and how I fixed them.
+All notable changes to the Agentic Video Analyst project.
+
+---
+
+## [0.6.0] - 2026-01-09
+
+### 🎉 Phase 6 Complete - Full-Stack Integration
+
+**MILESTONE**: End-to-end video analysis system operational with frontend, HTTP bridge, and backend fully integrated.
+
+### ✅ Frontend-Backend Integration
+
+**IMPLEMENTED**: HTTP Bridge with enhanced streaming
+- FastAPI bridge converts HTTP/JSON requests to gRPC calls
+- Bidirectional communication between React frontend and Python backend
+- Server running on port 8080 with CORS enabled
+- Connected to gRPC backend on localhost:50051
+
+**FIXED**: Streaming response flow
+- HTTP bridge now sends two message types: progress updates and final response
+- Progress updates: `{update: "text", progress: 0, sessionId: "..."}`
+- Final response: `{response: "text", actions: [...], artifacts: [...], sessionId: "..."}`
+- Frontend correctly parses both message types
+- Real-time progress updates now display in UI during long-running operations
+
+**FIXED**: Session data persistence across streaming
+- `StreamQuery` method now stores results in `session_results` dict
+- Accumulates transcription, vision_results, and summary data per session
+- Session data persists for report generation
+- Fixed empty PDF/PPTX issue caused by missing session context
+- Reports now contain actual analysis data from video queries
+
+**FIXED**: Video registry persistence
+- Added `video_registry.json` in uploads directory
+- Videos persist across server restarts
+- `_load_video_registry()` loads mappings on startup
+- `_save_video_registry()` saves after each upload
+- Created `create_registry.py` utility to rebuild registry from existing uploads
+- Handles 15+ videos with proper UUID → file path mapping
+
+**IMPROVED**: Comprehensive logging throughout stack
+- HTTP bridge logs: `[STREAM]`, `[QUERY]`, `[REPORT]` prefixes for clarity
+- gRPC server logs: Session updates and context information
+- Frontend logs: Console output for request/response debugging
+- Detailed error messages with stack traces for troubleshooting
+
+### 🔧 Backend Fixes
+
+**FIXED**: Report generation with session context
+- GenerateReport now properly retrieves session_results
+- Logs available sessions and context keys for debugging
+- Reports include accumulated transcription and vision data
+- PDF/PPTX files now 3-4KB (with content) vs 1.6KB (empty)
+
+**IMPROVED**: Error handling in streaming
+- Graceful error handling in HTTP bridge generator
+- Error chunks sent to frontend with proper formatting
+- Connection recovery for interrupted streams
+- Better validation of required fields (videoId, query)
+
+### 📚 Documentation Overhaul
+
+**CREATED**: Comprehensive documentation structure
+- `docs/getting-started.md` - Complete setup and first steps guide
+- `docs/installation.md` - Detailed installation instructions with troubleshooting
+- Moved all setup documentation from root to `/docs` directory
+- Consistent formatting and writing style across all docs
+
+**UPDATED**: README.md
+- Simplified to essential information and quick start
+- Added clear architecture diagram
+- Links to comprehensive docs in `/docs`
+- Professional presentation for portfolio/application
+
+**REORGANIZED**: Project structure
+- Consolidated scattered markdown files
+- Removed redundant quickstart files
+- Clean repository root with proper documentation hierarchy
+- Easy navigation for new users and developers
+
+### 🧪 Testing & Validation
+
+**VERIFIED**: Full integration test flow
+1. Video upload through frontend → HTTP bridge → gRPC → Storage
+2. Query submission → HTTP bridge → gRPC → Orchestrator → Agents → Response
+3. Streaming responses → HTTP bridge → Frontend → UI display
+4. Report generation → Session context → PDF/PPTX creation
+5. Video registry persistence across restarts
+
+### 🐛 Bug Fixes
+
+- Fixed port conflicts during server startup (8080 and 50051)
+- Resolved duplicate server instances causing connection issues
+- Fixed video ID not found errors after server restart
+- Corrected empty report generation from missing session data
+- Resolved streaming response not appearing in UI chat interface
 
 ---
 

@@ -13,7 +13,8 @@ Intel Assignment/
 ├── backend/                    # Python backend
 │   ├── .env.example           # Environment template
 │   ├── requirements.txt       # Python dependencies
-│   ├── main.py               # Backend entry point
+│   ├── main.py               # gRPC backend entry point
+│   ├── http_bridge.py        # FastAPI HTTP-to-gRPC bridge
 │   ├── test_models.py        # Model testing script
 │   │
 │   ├── agents/               # AI Agents
@@ -30,10 +31,17 @@ Intel Assignment/
 │   │   ├── vision_mcp.py
 │   │   └── generation_mcp.py
 │   │
+│   ├── generated/            # Generated gRPC files
+│   │   ├── video_analysis_pb2.py
+│   │   └── video_analysis_pb2_grpc.py
+│   │
 │   ├── models/               # AI model files (gitignored)
 │   │   └── .gitkeep
 │   │
 │   ├── data/                 # Database and persistent data
+│   │   └── .gitkeep
+│   │
+│   ├── logs/                 # Server logs
 │   │   └── .gitkeep
 │   │
 │   ├── uploads/              # User uploaded videos
@@ -42,7 +50,18 @@ Intel Assignment/
 │   └── venv/                 # Python virtual environment
 │
 ├── frontend/                  # React + Tauri frontend
-│   └── (to be created)
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   │   ├── VideoUpload.tsx
+│   │   │   ├── ChatInterface.tsx
+│   │   │   └── VideoInfo.tsx
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── services/        # API client
+│   │   ├── App.tsx          # Main app component
+│   │   └── main.tsx         # React entry point
+│   ├── src-tauri/           # Tauri Rust wrapper
+│   ├── package.json         # npm dependencies
+│   └── vite.config.ts       # Vite build config
 │
 ├── proto/                     # gRPC Protocol definitions
 │   └── video_analysis.proto
@@ -56,6 +75,20 @@ Intel Assignment/
 
 ### Backend (`backend/`)
 Python-based backend with orchestrator and specialized agents.
+
+**gRPC Service (`main.py`):**
+- Port 50051
+- 5 endpoints fully implemented
+- Session management with context preservation
+- 50MB message size limits for video uploads
+
+**HTTP Bridge (`http_bridge.py`):**
+- FastAPI server on port 8080
+- Converts HTTP/JSON requests to gRPC calls
+- Why? React can't directly call gRPC from browser
+- Endpoints: /upload, /query, /stream, /history, /report
+- CORS enabled for local dev
+- All fields mapped to match video_analysis.proto
 
 **Orchestrator:** Query routing and coordination via MCP
 - `orchestrator_agent.py`: ✅ Llama 3.1 8B intent analysis, routes through MCP servers to agents, context management
@@ -86,17 +119,35 @@ Python-based backend with orchestrator and specialized agents.
 - 50MB message size limits for video uploads
 - Server runs on port 50051
 
-**Status:** ✅ Phase 5 Complete - gRPC service live with all endpoints functional. PDF generation working with session context. Ready for frontend integration.
+**Status:** ✅ Phase 5 Complete - gRPC service live with all endpoints functional. PDF generation working with session context. HTTP bridge operational. Frontend scaffolding done. Now testing integration.
 
 ### Frontend (`frontend/`)
 Desktop application built with React and Tauri.
 
-**Key Features:**
-- Chat-style UI for natural language interaction
-- Video upload component
-- Real-time response streaming
-- Persistent chat history
-- Artifact display (images, PDFs, etc.)
+**Tech Stack:**
+- React 18.3.1 with TypeScript 5.3.3 (strict mode)
+- Vite 5.4.21 for build tooling
+- Tailwind CSS 3.4.19 for styling
+- Tauri 1.6.0 for desktop wrapper
+
+**Components:**
+- `VideoUpload.tsx`: Drag & drop upload with preview
+- `ChatInterface.tsx`: Message display with streaming support
+- `VideoInfo.tsx`: Video metadata and report buttons
+
+**Hooks:**
+- `useVideoUpload`: Upload logic and progress tracking
+- `useVideoQuery`: Query handling and responses
+- `useChatHistory`: Session-based message history
+
+**API Client (`services/api.ts`):**
+- VideoAnalysisClient class with TypeScript types
+- All 5 endpoints: upload, query, stream, history, report
+- Connects to HTTP bridge at localhost:8080
+
+**Status:** ✅ Scaffolding complete (19 files), testing integration with HTTP bridge
+
+**Why Tauri?** Cross-platform desktop app without Electron bloat. Uses native webview.
 
 ### Protocol (`proto/`)
 gRPC definitions for frontend-backend communication.

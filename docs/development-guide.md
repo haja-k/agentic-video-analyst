@@ -75,12 +75,36 @@
 - Video: 5.38 MB successfully processed
 - PDF: 3.9KB with full content
 
-### Next: Frontend Integration (Phase 6)
-- [ ] React + Tauri setup
-- [ ] Chat interface connected to gRPC
-- [ ] Video upload component
-- [ ] Real-time streaming display
-- [ ] End-to-end testing
+### Day 7: Frontend & HTTP Bridge ✅
+
+**HTTP Bridge:**
+- Built FastAPI bridge (http_bridge.py, 150 lines)
+- Converts HTTP/JSON ↔ gRPC on port 8080
+- Why? React can't directly call gRPC from browser
+- All proto field mappings corrected
+- CORS enabled for local dev
+- Async gRPC client with connection pooling
+
+**Frontend Scaffolding:**
+- React 18 + TypeScript + Vite + Tailwind
+- Tauri 1.6 desktop wrapper
+- 19 files created (~1,900 lines)
+- Components: VideoUpload, ChatInterface, VideoInfo
+- Hooks: useVideoUpload, useVideoQuery, useChatHistory
+- API client: VideoAnalysisClient with full typing
+- 230 npm packages installed
+
+**Current Status:**
+- Backend: 100% operational (gRPC on 50051)
+- Bridge: 100% operational (HTTP on 8080)
+- Frontend: Scaffolding complete, testing integration
+
+### Next: Frontend Polish & Testing
+- [ ] End-to-end integration tests
+- [ ] Streaming response handling
+- [ ] Report download UI
+- [ ] Desktop app packaging
+- [ ] Demo videos and scenarios
 
 ## Must-Have Features
 
@@ -129,20 +153,40 @@ python test_generation.py
 
 **Backend server:**
 ```bash
+# Terminal 1 - gRPC Backend
 cd backend
 ./run.sh  # starts on port 50051
+
+# Terminal 2 - HTTP Bridge
+cd backend
+source venv/bin/activate
+python3 http_bridge.py  # starts on port 8080
+
+# Terminal 3 - Frontend (optional)
+cd frontend
+npm run dev  # starts on port 1420
 ```
+
+Then open http://localhost:1420 to use the app.
 
 ### Frontend Development
 
 ```bash
-# Start frontend in dev mode
+# Install dependencies (first time only)
 cd frontend
-npm run tauri dev
+npm install
 
-# Build for production
+# Start dev server (connects to HTTP bridge at 8080)
+npm run dev
+
+# Build Tauri desktop app
 npm run tauri build
+
+# Run as desktop app in dev mode
+npm run tauri dev
 ```
+
+Frontend talks to HTTP bridge (8080), which talks to gRPC backend (50051). Pretty straightforward.
 
 ### Testing Individual Agents
 
