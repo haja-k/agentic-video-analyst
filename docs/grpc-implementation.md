@@ -1,8 +1,8 @@
 # gRPC Service Implementation Summary
 
 **Date:** January 9, 2026  
-**Phase:** 5 of 6 - COMPLETE ✅  
-**Status:** All Endpoints Functional, PDF Generation Working
+**Phase:** 6 of 6 - Frontend Integration in Progress  
+**Status:** All Backend Services Operational, Testing Integration
 
 ---
 
@@ -11,8 +11,8 @@
 ### 1. Proto Compilation ✅
 - Generated Python gRPC stubs from `video_analysis.proto`
 - Files created:
-  - `backend/video_analysis_pb2.py` - Message definitions
-  - `backend/video_analysis_pb2_grpc.py` - Service stubs
+  - `backend/generated/video_analysis_pb2.py` - Message definitions
+  - `backend/generated/video_analysis_pb2_grpc.py` - Service stubs
 
 ### 2. gRPC Service Implementation ✅
 
@@ -243,110 +243,161 @@ The system handles all 7 query types via gRPC:
 
 ### Modified
 - `backend/main.py` - Added VideoAnalysisServicer class
-  - Increased message size limits
+  - Increased message size limits to 50MB
   - Fixed orchestrator API calls
   - Implemented all 5 service endpoints
 
-### Created
-- `backend/video_analysis_pb2.py` - Generated proto messages
-- `backend/video_analysis_pb2_grpc.py` - Generated gRPC stubs
+### Created - Backend
+- `backend/generated/video_analysis_pb2.py` - Generated proto messages
+- `backend/generated/video_analysis_pb2_grpc.py` - Generated gRPC stubs
+- `backend/http_bridge.py` - FastAPI HTTP-to-gRPC bridge (150 lines)
 - `backend/tests/test_grpc_client.py` - Comprehensive test client
 - `backend/tests/test_connection.py` - Simple connection test
 - `backend/tests/test_grpc.sh` - Automated test script
+
+### Created - Frontend
+- `frontend/src/components/VideoUpload.tsx` - Upload UI
+- `frontend/src/components/ChatInterface.tsx` - Chat display
+- `frontend/src/components/VideoInfo.tsx` - Metadata panel
+- `frontend/src/hooks/useVideoUpload.ts` - Upload logic
+- `frontend/src/hooks/useVideoQuery.ts` - Query handling
+- `frontend/src/hooks/useChatHistory.ts` - History management
+- `frontend/src/services/api.ts` - HTTP client (VideoAnalysisClient)
+- `frontend/src/App.tsx` - Main app component
+- `frontend/package.json` - 230 npm dependencies
+- `frontend/vite.config.ts` - Build configuration
+- `frontend/tsconfig.json` - TypeScript strict mode
+- `frontend/src-tauri/*` - Tauri desktop wrapper config
 
 ---
 
 ## Integration Points for Frontend
 
-The gRPC service is ready for frontend integration. Frontend developers should:
+The gRPC service is ready for frontend integration, but React can't directly call gRPC from the browser. That's why we built the HTTP bridge.
 
-### 1. Connect to the Server
-```javascript
-// Example with @grpc/grpc-js
-const grpc = require('@grpc/grpc-js');
-const protoLoader = require('@grpc/proto-loader');
+### HTTP Bridge (`http_bridge.py`) ✅
 
-const packageDefinition = protoLoader.loadSync('proto/video_analysis.proto');
-const proto = grpc.loadPackageDefinition(packageDefinition).video_analysis;
+**Why it exists:** Browsers can't speak gRPC natively. We need HTTP/JSON as the transport layer between React and the gRPC backend.
 
-const client = new proto.VideoAnalysisService(
-  'localhost:50051',
-  grpc.credentials.createInsecure()
-);
+**What it does:**
+- FastAPI server on port 8080
+- Translates HTTP POST requests → gRPC calls
+- Converts gRPC responses → JSON
+- Handles CORS for local development
+
+**Tech:**
+- FastAPI with async/await
+- grpc.aio for async gRPC calls
+- Lifespan context manager for connection pooling
+
+**Endpoints:**
+1. `POST /upload` - Upload video file (multipart/form-data)
+2. `POST /query` - Send query to backend
+3. `POST /stream` - Streaming query responses (NDJSON)
+4. `GET /history` - Get chat history for session
+5. `POST /report` - Generate PDF/PPTX report
+
+**Key Details:**
+- All proto field names match video_analysis.proto exactly
+- Uses `content` field (not `video_data`) for video bytes
+- Response metadata properly parsed from `response.metadata`
+- Session management via session_id in requests
+
+**Running it:**
+```bash
+cd backend
+source venv/bin/activate
+python3 http_bridge.py
 ```
 
-### 2. Upload Video
-```javascript
-const videoData = fs.readFileSync('video.mp4');
+Server starts on http://localhost:8080 and connects to gRPC backend at localhost:50051.
 
-client.UploadVideo({
-  filename: 'video.mp4',
-  content: videoData,
-  mime_type: 'video/mp4'
-}, (err, response) => {
-  if (!err) {
-    console.log('Video ID:', response.video_id);
-    console.log('Duration:', response.metadata.duration_seconds);
-  }
+### Frontend Integration (React)
+
+Now the frontend just makes normal HTTP requests:
+
+### 1. Upload Video
+```typescript
+const formData = new FormData();
+formData.append('file', videoFile);
+
+const response = await fetch('http://localhost:8080/upload', {
+  method: 'POST',
+  body: formData
 });
+
+const data = await response.json();
+console.log('Video ID:', data.videoId);
+console.log('Duration:', data.metadata.duration);
 ```
 
-### 3. Query Video
-```javascript
-client.QueryVideo({
-  session_id: sessionId,
-  video_id: videoId,
-  query: 'Transcribe the video'
-}, (err, response) => {
-  if (!err) {
-    console.log('Response:', response.response_text);
-    console.log('Artifacts:', response.artifacts);
-  }
-});
-```
-
-### 4. Stream Query
-```javascript
-const call = client.StreamQuery({
-  session_id: sessionId,
-  video_id: videoId,
-  query: 'Describe what is happening'
+### 2. Query Video
+```typescript
+const response = await fetch('http://localhost:8080/query', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: sessionId,
+    videoId: videoId,
+    query: 'Transcribe the video'
+  })
 });
 
-call.on('data', (response) => {
-  console.log('Update:', response.response_text);
-  if (response.confidence >= 1.0) {
-    console.log('Final response received');
-  }
-});
+const data = await response.json();
+console.log('Response:', data.response);
+console.log('Artifacts:', data.artifacts);
 ```
+
+### 3. Stream Query
+```typescript
+const response = await fetch('http://localhost:8080/stream', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: sessionId,
+    videoId: videoId,
+    query: 'Describe what is happening'
+  })
+});
+
+const reader = response.body?.getReader();
+// Read NDJSON stream line by line
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const chunk = JSON.parse(new TextDecoder().decode(value));
+  console.log('Update:', chunk.response);
+}
+```
+
+Much simpler than gRPC-web, and we keep all the benefits of gRPC on the backend.
 
 ---
 
 ## Next Steps
 
-### Frontend Development (Phase 6)
+### Frontend Development (Phase 6 - In Progress)
 
-1. **React + Tauri Setup**
-   - Initialize Tauri project
-   - Install gRPC client dependencies
-   - Configure build system
+1. **React + Tauri Setup** ✅
+   - Tauri project initialized
+   - gRPC client deps (via HTTP bridge, not needed)
+   - Vite + TypeScript + Tailwind configured
 
-2. **Components to Build**
-   - `VideoUpload` - File picker and upload UI
-   - `ChatInterface` - Query input and message history
-   - `ResultsPanel` - Display transcripts, objects, artifacts
-   - `SessionManager` - Handle session state
+2. **Components Built** ✅
+   - `VideoUpload.tsx` - Drag & drop with preview
+   - `ChatInterface.tsx` - Message display with streaming
+   - `VideoInfo.tsx` - Metadata display and report buttons
 
-3. **State Management**
-   - Store session_id and video_id
-   - Track chat history locally
-   - Sync with backend via GetChatHistory
+3. **API Integration** ✅
+   - `services/api.ts` - VideoAnalysisClient with full typing
+   - Custom hooks for upload, query, and history
+   - HTTP bridge connection at localhost:8080
 
-4. **File Handling**
-   - Download generated PDF/PPTX files
-   - Display JSON artifacts (transcripts, vision results)
-   - Show video metadata
+4. **Current Work** 🔄
+   - Testing end-to-end upload workflow
+   - Verifying all endpoint mappings
+   - Integration testing with real videos
+   - Streaming response handling
 
 ---
 
@@ -373,6 +424,7 @@ call.on('data', (response) => {
 
 ## Success Criteria Met ✅
 
+**Backend (Phase 5):**
 - [x] gRPC service running on port 50051
 - [x] All 5 endpoints implemented
 - [x] Video upload with metadata extraction working
@@ -384,6 +436,17 @@ call.on('data', (response) => {
 - [x] Orchestrator integration working
 - [x] Test infrastructure complete
 
+**Frontend Bridge (Phase 6):**
+- [x] HTTP bridge operational on port 8080
+- [x] All proto field mappings corrected
+- [x] CORS configured for local dev
+- [x] Async gRPC client with connection pooling
+- [x] Frontend scaffolding complete (19 files)
+- [x] TypeScript types for all endpoints
+- [x] React components built
+- [ ] End-to-end integration tests
+- [ ] Desktop app packaging
+
 ---
 
-**Conclusion:** The gRPC backend is fully implemented and ready for frontend integration. All communication pathways are tested and operational. The system can now handle video uploads, natural language queries, and artifact generation via a standardized gRPC API.
+**Conclusion:** The gRPC backend is fully implemented and the HTTP bridge is operational. Frontend can now communicate with the backend via simple HTTP/JSON requests. All components are in place for full integration testing.
